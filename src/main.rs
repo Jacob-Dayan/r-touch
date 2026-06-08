@@ -7,21 +7,30 @@ use std::{
     fs::{self, File},
     io,
 };
+mod logger;
 fn main() {
     let args: Vec<String> = env::args().collect();
-    create(&args).unwrap_or_else(|error| {
+    let path = gen_path(&args).unwrap_or_else(|error| {
+        println!("{error}");
+        std::process::exit(1);
+    });
+    create(&path).unwrap_or_else(|error| {
         println!("{error}");
         std::process::exit(1);
     });
     println!("Success!");
+    let message = format!("File Created: {path}");
+    log_manager(&message);
 }
 
-fn create(args: &[String]) -> Result<(), String> {
+fn gen_path(args: &[String]) -> Result<&str, String> {
     if args.len() < 2 {
         return Err("You need to pass in the path to the file.".to_string());
     }
     let path = &args[1];
-
+    Ok(path)
+}
+fn create(path: &str) -> Result<(), String> {
     let path_buf = std::path::Path::new(path);
     if path_buf.is_dir() {
         replace(path).map_err(|e| format!("Failed to replace directory: {e}"))?;
@@ -65,5 +74,13 @@ fn replace(path: &str) -> io::Result<()> {
             println!("Abort");
             std::process::exit(0)
         }
+    }
+}
+
+//other stuff than creating file
+fn log_manager(message: &str) {
+    if let Err(e) = logger::Logger::log("~/.R-touch/logs/r-touch.log", &message) {
+        eprintln!("Error logging the action. Error: {e}");
+        std::process::exit(1);
     }
 }
