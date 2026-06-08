@@ -48,7 +48,7 @@ impl Action {
             "y" => {
                 return Action::Accept;
             }
-            "abort" => Action::Abort,
+            "n" => Action::Abort,
             _ => Action::Abort,
         }
     }
