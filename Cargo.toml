@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-
+#no deps yet, you can add somee here and PR
 [[bin]]
 path="src/main.rs"
 name="rtouch"
