@@ -1,5 +1,6 @@
 use std::{
     env,
+    fmt::format,
     fs::{self, File},
     io,
 };
@@ -21,10 +22,15 @@ fn main() {
     });
     //logging section
     println!("Success!");
-    let message = format!("File Created: {path}");
-    logmgr::log_manager(&message);
+    if !create_parents { //if created a file in a regular path (in an existing dir)
+        let message = format!("File Created: {path}");
+        logmgr::log_manager(&message);
+    } else { //id DID create the folder
+        let message = format!("File & parent folder created: {path}");
+        logmgr::log_manager(&message);
+    }
 }
-#[rustfmt::skip]
+
 fn gen_path(args: &[String]) -> Result<(&str, bool), String> {
     if args.len() < 2 {
         return Err("You need to pass in the path to the file.".to_string());
