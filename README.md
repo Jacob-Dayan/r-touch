@@ -11,5 +11,5 @@ run rtouch /path/to/file
 then try /path/to/a/file/that/has/no/parent/directory/example_file.txt -p
 the "-p" argument makes a parent directory for your file and then creating it in it.
 
-# todo
-Nothing to do, the code is (supposed to be) working.
+# NOTICE HERE WINDOWS USERS!!!
+the binary file in the release section is a Linux-exeutable file (ELF), not an EXE. you'd have to compile the code yourself.
