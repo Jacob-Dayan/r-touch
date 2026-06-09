@@ -3,8 +3,8 @@ use std::{
     fs::{self, File},
     io,
 };
-mod logger;
-mod logmgr;
+mod logger; //the logging logic (logger.rs).
+mod logmgr; //log-manager (logmgr.rs)
 fn main() {
     let args: Vec<String> = env::args().collect();
     let args = gen_path(&args).unwrap_or_else(|error| {
@@ -26,7 +26,7 @@ fn main() {
         let message = format!("File Created: {path}");
         logmgr::log_manager(&message);
     } else {
-        //id DID create the folder
+        //if DID create the folder
         let message = format!("File & parent folder created: {path}");
         logmgr::log_manager(&message);
     }
@@ -99,7 +99,7 @@ impl Action {
     fn new(path: &str) -> Self {
         // returns Action
         println!(
-            "'{path}' is a directory. Do you want the program to delete the directory and replace it with the file? (y/n)"
+            "'{path}' is a directory. Do you want the program to delete the directory and replace it with the file? (y/n)" //asking the user to accept the replacing action
         );
         let mut input = String::new();
         io::stdin()
@@ -107,11 +107,12 @@ impl Action {
             .expect("Faild reading the line.");
         //removed "no" and replaced it with "y" | "yes" (cause the _ already takes the "no" case)
         match input.trim().to_ascii_lowercase().as_str() {
+            //matching in lowercase as str
             "y" | "yes" => {
                 return Action::Accept;
             }
 
-            _ => Action::Abort,
+            _ => Action::Abort, //if said anything else that yes/y then return abort and then in replace function quit
         }
     }
 }
@@ -121,11 +122,14 @@ fn replace(path: &str) -> io::Result<()> {
         Action::Accept => {
             fs::remove_dir_all(path)?;
             File::create(path)?;
+            let message = format!("Replaced directory with file: {path}");
+            logmgr::log_manager(&message);
             Ok(())
         }
         Action::Abort => {
             println!("Abort");
-            std::process::exit(0)
+            logmgr::log_manager("Aborted a replacement of a directory in a file. ");
+            std::process::exit(0) //quit with success code (0)
         }
     }
 }
