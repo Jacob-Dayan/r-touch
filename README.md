@@ -13,3 +13,6 @@ the "-p" argument makes a parent directory for your file and then creating it in
 
 # NOTICE HERE WINDOWS USERS!!!
 the binary file in the release section is a Linux-exeutable file (ELF), not an EXE. you'd have to compile the code yourself.
+
+# todo
+add "--no-log" to make a file secretly🤫
