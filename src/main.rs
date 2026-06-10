@@ -1,10 +1,10 @@
 use std::{
     env,
     fs::{self, File},
-    io,
 };
-mod logger; //the logging logic (logger.rs).
+mod logger; //the logging logic (logger.rs)
 mod logmgr; //log-manager (logmgr.rs)
+mod replace_dir;
 fn main() {
     let args: Vec<String> = env::args().collect();
     let args = gen_path(&args).unwrap_or_else(|error| {
@@ -78,7 +78,7 @@ fn create(path: &str, create_parents: bool) -> Result<(), String> {
     // Checking if the requested path is an existing directory on the disk
     if path_buf.is_dir() {
         //if passed an existinng dir
-        replace(path).map_err(|e| format!("Failed to replace directory: {e}"))?; // maiking an own-costumed Error
+        replace_dir::replace(path).map_err(|e| format!("Failed to replace directory: {e}"))?; // maiking an own-costumed Error
 
     // FIX: Removed the duplicate `File::create` that was here in your original code,
     // since the `replace` function already handles creating the file if the user confirms with 'y'.
@@ -90,46 +90,4 @@ fn create(path: &str, create_parents: bool) -> Result<(), String> {
     }
 
     Ok(()) //if passed all the shi above return Ok status
-}
-enum Action {
-    Abort,
-    Accept,
-}
-impl Action {
-    fn new(path: &str) -> Self {
-        // returns Action
-        println!(
-            "'{path}' is a directory. Do you want the program to delete the directory and replace it with the file? (y/n)" //asking the user to accept the replacing action
-        );
-        let mut input = String::new();
-        io::stdin()
-            .read_line(&mut input)
-            .expect("Faild reading the line.");
-        //removed "no" and replaced it with "y" | "yes" (cause the _ already takes the "no" case)
-        match input.trim().to_ascii_lowercase().as_str() {
-            //matching in lowercase as str
-            "y" | "yes" => {
-                return Action::Accept;
-            }
-
-            _ => Action::Abort, //if said anything else that yes/y then return abort and then in replace function quit
-        }
-    }
-}
-fn replace(path: &str) -> io::Result<()> {
-    let action = Action::new(&path);
-    match action {
-        Action::Accept => {
-            fs::remove_dir_all(path)?;
-            File::create(path)?;
-            let message = format!("Replaced directory with file: {path}");
-            logmgr::log_manager(&message);
-            Ok(())
-        }
-        Action::Abort => {
-            println!("Abort");
-            logmgr::log_manager("Aborted a replacement of a directory in a file. ");
-            std::process::exit(0) //quit with success code (0)
-        }
-    }
 }
