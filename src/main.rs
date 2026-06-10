@@ -21,15 +21,14 @@ fn main() {
     });
     //logging section
     println!("Success!");
-    if !create_parents {
-        //if created a file in a regular path (in an existing dir)
-        let message = format!("File Created: {path}");
-        logmgr::log_manager(&message);
+    if !create_parents && should_log {
+        //if created a file in a regular path (in an existing dir) and didn't run with --no-log
+
+        logmgr::log_manager(&format!("File Created: {path}"));
     } else {
         //if DID create the folder
-        let message = format!("File & parent folder created: {path}");
         if should_log {
-            logmgr::log_manager(&message)
+            logmgr::log_manager(&format!("File & parent folder created: {path}"))
         };
     }
 }
@@ -54,7 +53,6 @@ fn gen_path(args: &[String]) -> Result<(&str, bool, bool), String> {
             should_log = false;
         } else {
             path = arg.as_str(); //else return it without touching
-            should_log = true;
         }
     }
 
