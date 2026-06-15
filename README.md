@@ -18,7 +18,3 @@ and NONE parent-directory or file creating will be logged.
 
 # NOTICE HERE WINDOWS USERS!!!
 the binary file in the release section is a Linux-exeutable file (ELF), not an EXE. you'd have to compile the code yourself.
-
-
-# btw
-this is a learning-project to deal and master the file_system part of the standart library.
