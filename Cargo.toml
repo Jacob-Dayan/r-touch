@@ -1,6 +1,6 @@
 [package]
 name = "rtouch"
-version = "0.2.5" #not 2.5 yet, but sooooo closeee
+version = "0.2.5" # soooo closeee to 0.2.5 but still 0.2.4
 edition = "2024"
 
 [dependencies]
