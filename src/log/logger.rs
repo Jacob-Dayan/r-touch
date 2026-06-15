@@ -3,7 +3,6 @@ use std::io::{Result, Write};
 use std::path::PathBuf;
 use std::time::SystemTime;
 
-
 pub struct Logger;
 
 impl Logger {
@@ -16,11 +15,8 @@ impl Logger {
             }
         }
 
-        let mut file = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(&path)?;
-        
+        let mut file = OpenOptions::new().create(true).append(true).open(&path)?;
+
         file.write_all(format!("{:?}: {}\n", SystemTime::now(), message).as_bytes())?;
         file.flush()
     }
