@@ -1,7 +1,6 @@
 use log::logmgr;
 use std::{
     env,
-    fmt::format,
     fs::{self, File},
 };
 mod log {
