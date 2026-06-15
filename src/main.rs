@@ -12,7 +12,8 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let args = gen_path(&args).unwrap_or_else(|error| {
         println!("{error}");
-        std::process::exit(1);
+        log::logmgr::error_log(&format!("Unexpected Error : {error}"));
+        return ("", false, false); //replacement for std::process::exit(1)
     });
 
     let path = args.0;
@@ -21,7 +22,7 @@ fn main() {
     create(path, create_parents).unwrap_or_else(|error| {
         println!("{error}");
         log::logmgr::error_log(&format!("Unexpected Error : {error}"));
-        std::process::exit(1);
+        return;
     });
     //logging section
     // println!("Success!");
@@ -62,6 +63,9 @@ fn gen_path(args: &[String]) -> Result<(&str, bool, bool), String> {
 
     if path.is_empty() {
         //if he used "-p" argument but didn't pass it a file (only a parent dir)
+        //we could log this error aswell, but it is not a crash, just a bad usages
+        // if you wanna log this aswell you can uncomment this line:
+        // log::logmgr::error_log(&format!("File has not been passed."));
         return Err("You need to pass in the path to the file.".to_string()); //return error (and then in main exit)
     }
 
@@ -93,7 +97,7 @@ fn create(path: &str, create_parents: bool) -> Result<(), String> {
 
     // Checking if the requested path is an existing directory on the disk
     if path_buf.is_dir() {
-        //if passed an existing dir
+        //if attempt to create a file in a name of an existing folder
         if let Err(e) = replace_dir::replace(path) {
             let err_msg = format!("Faild to replace direcrory : {e}");
             log::logmgr::error_log(&err_msg);
@@ -103,9 +107,8 @@ fn create(path: &str, create_parents: bool) -> Result<(), String> {
         // FIX: Removed the duplicate `File::create` that was here in your original code,
         // since the `replace` function already handles creating the file if the user confirms with 'y'.
     } else {
-        // FIX: This block solves the main issue.
         // If the path is not an existing directory (the standard case for creating a new file),
-        // the code falls into this block and creates the file safely on the disk.
+        // the code falls into this block and creates the file
         File::create(path).map_err(|e| format!("Failed to create file: {e}"))?;
     }
 
