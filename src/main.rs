@@ -8,43 +8,49 @@ mod log {
     pub mod logmgr; //log manager, makes logging much easier (src/log/logmgr.rs)
 }
 mod replace_dir; //the file that is taking care on replacing folders with files (take a look)
+
+struct TouchArgs<'a> {
+    paths: Vec<&'a str>,
+    create_parents: bool,
+    should_log: bool,
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let args = gen_path(&args).unwrap_or_else(|error| {
+    let touch_args = gen_path(&args).unwrap_or_else(|error| {
         println!("{error}");
         log::logmgr::error_log(&format!("Unexpected Error : {error}"));
-        return ("", false, false); //replacement for std::process::exit(1)
+        std::process::exit(1);
     });
 
-    let path = args.0;
-    let create_parents = args.1;
-    let should_log = args.2;
-    create(path, create_parents).unwrap_or_else(|error| {
-        println!("{error}");
-        log::logmgr::error_log(&format!("Unexpected Error : {error}"));
-        return;
-    });
-    //logging section
-    // println!("Success!");
-    if !create_parents && should_log {
-        //if created a file in a regular path (in an existing dir) and didn't run with --no-log
+    for path in touch_args.paths {
+        create(path, touch_args.create_parents).unwrap_or_else(|error| {
+            println!("{error}");
+            log::logmgr::error_log(&format!("Unexpected Error : {error}"));
+            std::process::exit(1);
+        });
+        //logging section
+        // println!("Success!");
+        if !touch_args.create_parents && touch_args.should_log {
+            //if created a file in a regular path (in an existing dir) and didn't run with --no-log
 
-        log::logmgr::success_log(&format!("File Created: {path}"));
-    } else {
-        //if DID create the folder
-        if should_log {
-            log::logmgr::success_log(&format!("File & parent folder created: {path}"))
-        };
+            log::logmgr::success_log(&format!("File Created: {path}"));
+        } else {
+            //if DID create the folder
+            if touch_args.should_log {
+                log::logmgr::success_log(&format!("File & parent folder created: {path}"))
+            };
+        }
     }
 }
 
-fn gen_path(args: &[String]) -> Result<(&str, bool, bool), String> {
+fn gen_path(args: &[String]) -> Result<TouchArgs, String> {
     if args.len() < 2 {
         return Err("You need to pass in the path to the file.".to_string());
     }
 
     let mut create_parents = false;
-    let mut path = "";
+    let mut paths = Vec::new();
     let mut should_log: bool = true;
     for arg in args.iter().skip(1) {
         //check if has got any arguments
@@ -57,19 +63,23 @@ fn gen_path(args: &[String]) -> Result<(&str, bool, bool), String> {
         } else if arg == "--no-log" {
             should_log = false;
         } else {
-            path = arg.as_str(); //else return it without touching
+            paths.push(arg.as_str()); //else return it without touching
         }
     }
 
-    if path.is_empty() {
+    if paths.is_empty() {
         //if he used "-p" argument but didn't pass it a file (only a parent dir)
-        //we could log this error aswell, but it is not a crash, just a bad usages
-        // if you wanna log this aswell you can uncomment this line:
-        // log::logmgr::error_log(&format!("File has not been passed."));
+        log::logmgr::error_log(&format!(
+            "Error: passed in parent folder, expected parent dir + file."
+        ));
         return Err("You need to pass in the path to the file.".to_string()); //return error (and then in main exit)
     }
 
-    Ok((path, create_parents, should_log)) //if passed all the shi above return Ok status with the bool of create parents and the path
+    Ok(TouchArgs {
+        paths,
+        create_parents,
+        should_log,
+    }) //if passed all the shi above return Ok status with the bool of create parents and the path
 }
 
 fn create(path: &str, create_parents: bool) -> Result<(), String> {
@@ -86,9 +96,6 @@ fn create(path: &str, create_parents: bool) -> Result<(), String> {
                     log::logmgr::error_log(&err_msg);
                     return Err(err_msg); //but here we wanna return it so we could print it in line 22
                 }
-                //     fs::create_dir_all(parent)
-                //         .map_err(|e| format!("Failed to create parent directories: {e}"))?;
-                // }
             }
         }
     }
@@ -108,7 +115,7 @@ fn create(path: &str, create_parents: bool) -> Result<(), String> {
         // since the `replace` function already handles creating the file if the user confirms with 'y'.
     } else {
         // If the path is not an existing directory (the standard case for creating a new file),
-        // the code falls into this block and creates the file
+        // the code falls into this block and creates the file on the disk
         File::create(path).map_err(|e| format!("Failed to create file: {e}"))?;
     }
 
