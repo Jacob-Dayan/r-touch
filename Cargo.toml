@@ -7,4 +7,4 @@ edition = "2024"
 dirs-next="2.0" #replaced home 0.5 in dirs-next for AIO crate that can handle more than just finding the home directory
 [[bin]]
 path="src/main.rs"
-name="rtouch"
+name="rtouch" # or R-touch, yk it doesn't really metter
