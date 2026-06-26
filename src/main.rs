@@ -44,7 +44,7 @@ fn main() {
     }
 }
 
-fn gen_path(args: &[String]) -> Result<TouchArgs, String> {
+fn gen_path(args: &[String]) -> Result<TouchArgs<'_>, String> {
     if args.len() < 2 {
         return Err("You need to pass in the path to the file.".to_string());
     }
