@@ -10,10 +10,13 @@ pub fn success_log(message: &str) {
     }
 }
 // Version 0.2.5
-#[rustfmt::skip] 
 pub fn error_log(message: &str) {
     let mut path = dirs_next::data_local_dir().unwrap_or_else(|| std::path::PathBuf::from("."));
-    path = path.join("R-touch").join("logs").join("crashes").join("r-touch_err.log");
+    path = path
+        .join("R-touch")
+        .join("logs")
+        .join("crashes")
+        .join("r-touch_err.log");
 
     if let Err(e) = logger::Logger::log(path.to_str().unwrap(), &message) {
         eprintln!("Error logging the failer. Error: {e}");
