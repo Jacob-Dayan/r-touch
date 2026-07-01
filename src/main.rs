@@ -27,7 +27,7 @@ fn main() {
         create(path, touch_args.create_parents).unwrap_or_else(|error| {
             println!("{error}");
             log::logmgr::error_log(&format!("Unexpected Error : {error}"));
-            std::process::exit(1);
+            return;
         });
         //logging section
         // println!("Success!");
@@ -110,9 +110,6 @@ fn create(path: &str, create_parents: bool) -> Result<(), String> {
             log::logmgr::error_log(&err_msg);
             return Err(err_msg);
         }
-
-        // FIX: Removed the duplicate `File::create` that was here in your original code,
-        // since the `replace` function already handles creating the file if the user confirms with 'y'.
     } else {
         // If the path is not an existing directory (the standard case for creating a new file),
         // the code falls into this block and creates the file on the disk
