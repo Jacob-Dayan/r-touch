@@ -4,8 +4,8 @@ use std::{
     fs::{self, File},
 };
 mod log {
-    pub mod logger; //the logging logic (src/log/logger.rs)
-    pub mod logmgr; //log manager, makes logging much easier (src/log/logmgr.rs)
+    pub mod logger; //logging locic
+    pub mod logmgr; // logging manager (wrapper)
 }
 mod replace_dir; //the file that is taking care on replacing folders with files (take a look)
 
@@ -54,11 +54,7 @@ fn gen_path(args: &[String]) -> Result<TouchArgs<'_>, String> {
     for arg in args.iter().skip(1) {
         //check if has got any arguments
         if arg == "-p" || arg == "--parents" {
-            //if got the argument "-p" or "--parents":
-            create_parents = true; //setting the bool to true
-        //added --no-log
-        //version 0.2.4
-        // FIX
+            create_parents = true;
         } else if arg == "--no-log" {
             should_log = false;
         } else {
@@ -89,18 +85,13 @@ fn create(path: &str, create_parents: bool) -> Result<(), String> {
         if let Some(parent) = path_buf.parent() {
             if !parent.as_os_str().is_empty() {
                 if let Err(e) = fs::create_dir_all(parent) {
-                    //we could just pass a format into the error log call
                     let err_msg = format!("Faild to create paret directories. Error: {e}");
                     log::logmgr::error_log(&err_msg);
-                    return Err(err_msg); //but here we wanna return it so we could print it in line 22
+                    return Err(err_msg); //here returning the error formatted to print out in line 22
                 }
             }
         }
     }
-    // FIX: The parent directory creation block ends here. We do not create the file inside this block
-    // because we want the file to be created even when `create_parents` is false
-
-    // Checking if the requested path is an existing directory on the disk
     if path_buf.is_dir() {
         //if attempt to create a file in a name of an existing folder
         if let Err(e) = replace_dir::replace(path) {
