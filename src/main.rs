@@ -33,7 +33,6 @@ fn main() {
         // println!("Success!");
         if !touch_args.create_parents && touch_args.should_log {
             //if created a file in a regular path (in an existing dir) and didn't run with --no-log
-
             log::logmgr::success_log(&format!("File Created: {path}"));
         } else {
             //if DID create the folder
@@ -79,11 +78,10 @@ fn gen_path(args: &[String]) -> Result<TouchArgs<'_>, String> {
         paths,
         create_parents,
         should_log,
-    }) //if passed all the shi above return Ok status with the bool of create parents and the path
+    }) //if passed all the shi above return Ok status with TouchArgs
 }
 
 fn create(path: &str, create_parents: bool) -> Result<(), String> {
-    //conversing the str to a Path that rust can understand itself without us manually explaining to it what path is
     let path_buf = std::path::Path::new(path);
 
     if create_parents {
