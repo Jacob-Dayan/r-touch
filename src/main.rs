@@ -15,13 +15,16 @@ struct TouchArgs<'a> {
     should_log: bool,
 }
 
-fn main() {
+fn main() -> Result<(), i32> {
     let args: Vec<String> = env::args().collect();
-    let touch_args = gen_path(&args).unwrap_or_else(|error| {
-        println!("{error}");
-        log::logmgr::error_log(&format!("Unexpected Error : {error}"));
-        std::process::exit(1);
-    });
+    let touch_args = match gen_path(&args) {
+        Ok(args) => args,
+        Err(error) => {
+            println!("{error}");
+            log::logmgr::error_log(&format!("Unexpected Error : {error}"));
+            return Err(1);
+        }
+    };
 
     for path in touch_args.paths {
         create(path, touch_args.create_parents).unwrap_or_else(|error| {
@@ -41,6 +44,8 @@ fn main() {
             };
         }
     }
+
+    Ok(())
 }
 
 fn gen_path(args: &[String]) -> Result<TouchArgs<'_>, String> {
