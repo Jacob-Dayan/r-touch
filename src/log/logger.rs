@@ -1,4 +1,4 @@
-use std::fs::{self, OpenOptions};
+use fs_err::{self as fs, OpenOptions};
 use std::io::{Result, Write};
 use std::path::PathBuf;
 use std::time::SystemTime;
