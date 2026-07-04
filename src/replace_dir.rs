@@ -1,31 +1,26 @@
 use super::logmgr;
 use fs_err::{self as fs, File};
 use std::io::{self, ErrorKind};
-
 pub enum Action {
     Abort,
     Accept,
 }
-
 impl Action {
+    #[rustfmt::skip]
     pub fn new(path: &str) -> Self {
-        // returns Action
-        println!(
-            "'{path}' is a directory. Do you want the program to delete the directory and replace it with the file? (y/n)" //asking the user to accept the replacing action
-        );
+        println!("'{path}' is a directory. Do you want to delete directory and replace it with the file? (y/n)");
         let mut input = String::new();
         io::stdin()
             .read_line(&mut input)
             .expect("Faild reading the line.");
-        //removed "no" and replaced it with "y" | "yes" (cause the _ already takes the "no" case)
         match input.trim().to_ascii_lowercase().as_str() {
             //matching as lowercased str
             "y" | "yes" => Action::Accept,
-            _ => Action::Abort, //if said anything else than yes/y then return abort and then in replace function quit
+            _ => Action::Abort, //anything else than `y`/`yes` returns abort
         }
     }
 }
-
+#[rustfmt::skip]
 pub fn replace(path: &str) -> io::Result<()> {
     let action = Action::new(path);
 
@@ -40,9 +35,7 @@ pub fn replace(path: &str) -> io::Result<()> {
                 Err(e) => {
                     match e.kind() {
                         ErrorKind::IsADirectory => {
-                            eprintln!(
-                                "Error:{e}\nconsider removing the '/' char at the end of the path."
-                            );
+                            eprintln!("Error:{e}\nconsider removing the '/' char at the end of the path.");
                         }
                         _ => eprintln!("{e}"),
                     }
