@@ -1,9 +1,8 @@
+use fs_err::{self as fs, File};
 use log::logmgr;
+use std::env;
 use std::process::ExitCode;
-use std::{
-    env,
-    fs::{self, File},
-};
+
 mod log {
     pub mod logger; //logging locic
     pub mod logmgr; // logging manager (wrapper)
@@ -90,11 +89,11 @@ fn create(path: &str, create_parents: bool) -> Result<(), String> {
         //if the bool from the function above is true
         if let Some(parent) = path_buf.parent() {
             if !parent.as_os_str().is_empty() {
-                if let Err(e) = fs::create_dir_all(parent) {
-                    let err_msg = format!("Faild to create paret directories. Error: {e}");
+                fs::create_dir_all(parent).map_err(|e| {
+                    let err_msg = e.to_string();
                     log::logmgr::error_log(&err_msg);
-                    return Err(err_msg); //here returning the error formatted to print out in line 22
-                }
+                    err_msg //here returning the error formatted to print out in line 22
+                })?;
             }
         }
     }
@@ -108,7 +107,11 @@ fn create(path: &str, create_parents: bool) -> Result<(), String> {
     } else {
         // If the path is not an existing directory (the standard case for creating a new file),
         // the code falls into this block and creates the file on the disk
-        File::create(path).map_err(|e| format!("Failed to create file: {e}"))?;
+        File::create(path).map_err(|e| {
+            let err_msg = e.to_string();
+            log::logmgr::error_log(&err_msg);
+            err_msg
+        })?;
     }
 
     Ok(()) //if passed all the shi above return Ok status

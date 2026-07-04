@@ -1,10 +1,12 @@
 use super::logmgr;
-use std::fs::{self, File};
+use fs_err::{self as fs, File};
 use std::io::{self, ErrorKind};
+
 pub enum Action {
     Abort,
     Accept,
 }
+
 impl Action {
     pub fn new(path: &str) -> Self {
         // returns Action
@@ -18,16 +20,14 @@ impl Action {
         //removed "no" and replaced it with "y" | "yes" (cause the _ already takes the "no" case)
         match input.trim().to_ascii_lowercase().as_str() {
             //matching as lowercased str
-            "y" | "yes" => {
-                return Action::Accept;
-            }
-
+            "y" | "yes" => Action::Accept,
             _ => Action::Abort, //if said anything else than yes/y then return abort and then in replace function quit
         }
     }
 }
+
 pub fn replace(path: &str) -> io::Result<()> {
-    let action = Action::new(&path);
+    let action = Action::new(path);
 
     match action {
         Action::Accept => {
@@ -50,7 +50,6 @@ pub fn replace(path: &str) -> io::Result<()> {
                 }
             }
         }
-
         Action::Abort => {
             println!("Abort");
             logmgr::success_log("Aborted a replacement of a directory in a file.");
