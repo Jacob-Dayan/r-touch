@@ -1,4 +1,5 @@
 use log::logmgr;
+use std::process::ExitCode;
 use std::{
     env,
     fs::{self, File},
@@ -15,14 +16,14 @@ struct TouchArgs<'a> {
     should_log: bool,
 }
 
-fn main() -> Result<(), i32> {
+fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
     let touch_args = match gen_path(&args) {
         Ok(args) => args,
         Err(error) => {
             println!("{error}");
             log::logmgr::error_log(&format!("Unexpected Error : {error}"));
-            return Err(1);
+            return ExitCode::from(1);
         }
     };
 
@@ -45,7 +46,7 @@ fn main() -> Result<(), i32> {
         }
     }
 
-    Ok(())
+    ExitCode::SUCCESS
 }
 
 fn gen_path(args: &[String]) -> Result<TouchArgs<'_>, String> {
@@ -68,7 +69,7 @@ fn gen_path(args: &[String]) -> Result<TouchArgs<'_>, String> {
     }
 
     if paths.is_empty() {
-        //if he used "-p" argument but didn't pass it a file (only a parent dir)
+        //if used "-p" argument but didn't pass it a file (only a parent dir)
         log::logmgr::error_log(&format!(
             "Error: passed in parent folder, expected parent dir + file."
         ));
@@ -79,7 +80,7 @@ fn gen_path(args: &[String]) -> Result<TouchArgs<'_>, String> {
         paths,
         create_parents,
         should_log,
-    }) //if passed all the shi above return Ok status with TouchArgs
+    })
 }
 
 fn create(path: &str, create_parents: bool) -> Result<(), String> {
