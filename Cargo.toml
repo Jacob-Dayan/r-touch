@@ -1,10 +1,12 @@
 [package]
 name = "rtouch"
-version = "0.2.6"
+version = "0.2.7"
 edition = "2024"
 
 [dependencies]
 dirs-next="2.0"
+fs-err = "2.0"
+
 [[bin]]
 path="src/main.rs"
 name="rtouch"
