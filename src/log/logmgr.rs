@@ -11,7 +11,7 @@ pub fn success_log(message: &str) {
 
     path = path.join("R-touch").join("logs").join("r-touch.log");
 
-    if let Err(e) = logger::Logger::log(path.to_str().unwrap(), &message) {
+    if let Err(e) = logger::Logger::log(path.to_str().unwrap(), message) {
         eprintln!("Error logging the action. Error: {e}");
         std::process::exit(1);
     }
@@ -25,7 +25,7 @@ pub fn error_log(message: &str) {
         .join("crashes")
         .join("r-touch_err.log");
 
-    if let Err(e) = logger::Logger::log(path.to_str().unwrap(), &message) {
+    if let Err(e) = logger::Logger::log(path.to_str().unwrap(), message) {
         eprintln!("Error logging the failure. Error: {e}");
         std::process::exit(1);
     }
