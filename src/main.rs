@@ -28,11 +28,12 @@ fn main() -> ExitCode {
     };
 
     for path in &touch_args.paths {
-        create(path, touch_args.create_parents).unwrap_or_else(|error| {
+        // CHANGED: Replaced unwrap_or_else with if let Err and continue to properly skip failed iterations
+        if let Err(error) = create(path, touch_args.create_parents) {
             println!("{error}");
             log::logmgr::error_log(&format!("Unexpected Error : {error}"));
-            return;
-        });
+            continue;
+        }
         //logging section
         // println!("Success!");
         if !touch_args.create_parents && touch_args.should_log {
@@ -97,29 +98,20 @@ fn create(path: &str, create_parents: bool) -> Result<(), String> {
         //if the bool from the function above is true
         if let Some(parent) = path_buf.parent() {
             if !parent.as_os_str().is_empty() {
-                fs::create_dir_all(parent).map_err(|e| {
-                    let err_msg = e.to_string();
-                    log::logmgr::error_log(&err_msg);
-                    err_msg //here returning the error formatted to print out in line 22
-                })?;
+                // CHANGED: Removed internal error logging, returning error string directly via ?
+                fs::create_dir_all(parent).map_err(|e| e.to_string())?;
             }
         }
     }
     if path_buf.is_dir() {
         //if attempt to create a file in a name of an existing folder
-        if let Err(e) = replace_dir::replace(path) {
-            let err_msg = format!("Faild to replace direcrory : {e}");
-            log::logmgr::error_log(&err_msg);
-            return Err(err_msg);
-        }
+        // CHANGED: Removed internal error logging, returning error string directly via ?
+        replace_dir::replace(path).map_err(|e| format!("Faild to replace direcrory : {e}"))?;
     } else {
         // If the path is not an existing directory (the standard case for creating a new file),
         // the code falls into this block and creates the file on the disk
-        File::create(path).map_err(|e| {
-            let err_msg = e.to_string();
-            log::logmgr::error_log(&err_msg);
-            err_msg
-        })?;
+        // CHANGED: Removed internal error logging, returning error string directly via ?
+        File::create(path).map_err(|e| e.to_string())?;
     }
 
     Ok(()) //if passed all the shi above return Ok status
