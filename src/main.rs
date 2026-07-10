@@ -23,7 +23,7 @@ fn main() -> ExitCode {
         Err(error) => {
             println!("{error}");
             log::logmgr::error_log(&format!("Unexpected Error : {error}"));
-            return ExitCode::from(1);
+            return ExitCode::FAILURE;
         }
     };
 
