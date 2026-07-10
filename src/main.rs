@@ -5,7 +5,7 @@ use std::env;
 use std::process::ExitCode;
 
 mod log {
-    pub mod logger; //logging locic
+    pub mod logger; //logging logic
     pub mod logmgr; // logging manager (wrapper)
 }
 mod replace_dir; //the file that is taking care on replacing folders with files (take a look)
