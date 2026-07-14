@@ -17,4 +17,4 @@ rtouch /secrets/new_folder/new_secret_file.txt -p --no-log
 and NONE parent-directory or file creating will be logged.
 
 # NOTICE HERE WINDOWS USERS!!!
-the binary file in the release section is a Linux-exeutable file (ELF), not an EXE. you'd have to compile the code yourself.
+the binary file in the release section is a Linux-exeutable file (ELF) not an EXE, tho the program is fully Cross-platform. you'd have to compile the code yourself.
