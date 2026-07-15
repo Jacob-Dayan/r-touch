@@ -1,43 +1,61 @@
-use super::logmgr;
+use crate::log::logmgr;
+
 use fs_err::{self as fs, File};
 use std::io::{self, ErrorKind};
+use std::path::Path;
+
 pub enum Action {
     Abort,
     Accept,
 }
+
+pub enum ReplResult {
+    Completed,
+    Aborted,
+    NotRequired,
+}
+
 impl Action {
-    #[rustfmt::skip]
-    pub fn new(path: &str) -> Self {
-        println!("'{path}' is a directory. Do you want to delete directory and replace it with the file? (y/n)");
+    // Prompt user input in terminal
+    pub fn new<P: AsRef<Path>>(path: P) -> Self {
+        println!(
+            "'{}' is a directory. Do you want to delete directory and replace it with the file? (y/n)",
+            path.as_ref().display()
+        );
         let mut input = String::new();
-        io::stdin()
-            .read_line(&mut input)
-            .expect("Faild reading the line.");
+        if io::stdin().read_line(&mut input).is_err() {
+            return Action::Abort;
+        }
         match input.trim().to_ascii_lowercase().as_str() {
-            //matching as lowercased str
             "y" | "yes" => Action::Accept,
-            _ => Action::Abort, //anything else than `y`/`yes` returns abort
+            _ => Action::Abort,
         }
     }
 }
-#[rustfmt::skip]
-pub fn replace(path: &str) -> io::Result<()> {
-    let action = Action::new(path);
+
+pub fn replace<P: AsRef<Path>>(path: P) -> io::Result<ReplResult> {
+    let path_ref = path.as_ref();
+    let action = Action::new(path_ref);
 
     match action {
         Action::Accept => {
-            fs::remove_dir_all(path)?;
-            match File::create(path) {
+            fs::remove_dir_all(path_ref)?;
+            match File::create(path_ref) {
                 Ok(_) => {
-                    logmgr::success_log(&format!("Replaced directory with file: {path}"));
-                    Ok(())
+                    logmgr::success_log(&format!(
+                        "Replaced directory with file: {}",
+                        path_ref.display()
+                    ));
+                    Ok(ReplResult::Completed)
                 }
                 Err(e) => {
                     match e.kind() {
                         ErrorKind::IsADirectory => {
-                            eprintln!("Error:{e}\nconsider removing the '/' char at the end of the path.");
+                            eprintln!(
+                                "Error:{e}\nconsider removing the '/' char at the end of the path."
+                            );
                         }
-                        _ => eprintln!("{e}"),
+                        _ => eprint!("{e}"),
                     }
                     Err(e)
                 }
@@ -45,8 +63,7 @@ pub fn replace(path: &str) -> io::Result<()> {
         }
         Action::Abort => {
             println!("Abort");
-            logmgr::success_log("Aborted a replacement of a directory in a file.");
-            std::process::exit(0) //quit with success code (0)
+            Ok(ReplResult::Aborted)
         }
     }
 }

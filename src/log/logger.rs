@@ -1,13 +1,14 @@
 use fs_err::{self as fs, OpenOptions};
 use std::io::{Result, Write};
-use std::path::PathBuf;
+use std::path::Path;
 use std::time::SystemTime;
 
 pub struct Logger;
 
 impl Logger {
-    pub fn log(file_path: &str, message: &str) -> Result<()> {
-        let path = PathBuf::from(file_path);
+    // Append log entry to file
+    pub fn log<P: AsRef<Path>>(file_path: P, message: &str) -> Result<()> {
+        let path = file_path.as_ref();
 
         if let Some(parent) = path.parent() {
             if !parent.as_os_str().is_empty() {
@@ -15,7 +16,7 @@ impl Logger {
             }
         }
 
-        let mut file = OpenOptions::new().create(true).append(true).open(&path)?;
+        let mut file = OpenOptions::new().create(true).append(true).open(path)?;
 
         file.write_all(format!("{:?}: {}\n", SystemTime::now(), message).as_bytes())?;
         file.flush()
