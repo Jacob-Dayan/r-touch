@@ -4,8 +4,8 @@ version = "1.0.0" # Final version. If you see this, the project should be archiv
 edition = "2024"
 
 [dependencies]
-fs_err = "2.11.0"
-dirs_next = "2.0.0"
+fs-err = "2.11.0"
+dirs-next = "2.0.0"
 clap = { version = "4.5.0", features = ["derive"] }
 
 [[bin]]

@@ -26,7 +26,8 @@ pub fn create<P: AsRef<Path>>(path: P, create_parents: bool) -> Result<ReplResul
             .map_err(|e| format!("Failed to replace directory: {e}"))?;
         return Ok(res);
     } else {
-        File::create(path_ref).map_err(|e| e.to_string())?;
+        File::create(path_ref)
+            .map_err(|e| format!("Unexpected Error: {e}.\nConsider running with -p."))?;
     }
 
     Ok(ReplResult::NotRequired)

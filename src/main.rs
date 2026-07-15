@@ -4,13 +4,13 @@ use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use r_touch::{ReplResult, create, log::logmgr};
+use rtouch::{ReplResult, create, log::logmgr};
 
 // Command line arguments parsing
 #[derive(Parser, Debug)]
 #[command(
     name = "R-touch",
-    version = "0.1",
+    version = "1.0 Latest", // oops accidentally wrote 0.1
     about = "A custom touch implementation in Rust"
 )]
 struct Cli {
@@ -81,7 +81,7 @@ fn main() -> ExitCode {
                 }
             }
             Err(error) => {
-                println!("{error}");
+                eprintln!("{error}");
                 logmgr::error_log(&format!("Unexpected Error : {error}"));
                 continue;
             }
