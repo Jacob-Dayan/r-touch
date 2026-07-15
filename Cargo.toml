@@ -1,11 +1,12 @@
 [package]
 name = "rtouch"
-version = "0.2.7"
+version = "1.0.0" # Final version. If you see this, the project should be archived.
 edition = "2024"
 
 [dependencies]
-dirs-next="2.0"
-fs-err = "2.0"
+fs_err = "2.11.0"
+dirs_next = "2.0.0"
+clap = { version = "4.5.0", features = ["derive"] }
 
 [[bin]]
 path="src/main.rs"
