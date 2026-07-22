@@ -27,7 +27,7 @@ impl Action {
             return Action::Abort;
         }
         match input.trim().to_ascii_lowercase().as_str() {
-            "y" | "yes" => Action::Accept,
+            "y" | "yes" | "" => Action::Accept,
             _ => Action::Abort,
         }
     }
