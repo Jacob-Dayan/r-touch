@@ -1,7 +1,8 @@
 [package]
 name = "rtouch"
-version = "1.0.0" # Final version. If you see this, the project should be archived.
+version = "1.0.0"
 edition = "2024"
+License = "GPLv3-or-later"
 
 [dependencies]
 fs-err = "2.11.0"
