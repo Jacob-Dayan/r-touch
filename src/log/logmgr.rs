@@ -4,7 +4,7 @@ use std::path::PathBuf;
 #[cfg(target_family = "windows")]
 const OS_ROOT: &str = "C:\\Users\\Public";
 #[cfg(target_family = "unix")]
-const OS_ROOT: &str = "/var/tmp";
+const OS_ROOT: &str = "/var/log";
 #[cfg(not(any(target_family = "windows", target_family = "unix")))]
 const OS_ROOT: &str = ".";
 
