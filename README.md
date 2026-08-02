@@ -30,3 +30,4 @@ Maka sure you have [Rust and Cargo](https://rustup.rs/) installed on your machin
 Linux 🐧
 MacOS 🍎💻
 Windows 🪟
+Windows Subsystem For Linux (I don't have an emoji for that)
