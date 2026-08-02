@@ -9,6 +9,9 @@ fs-err = "2.11.0"
 dirs-next = "2.0.0"
 clap = { version = "4.5.0", features = ["derive"] }
 
-[[bin]]
-path="src/main.rs"
-name="rtouch"
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
