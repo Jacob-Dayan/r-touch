@@ -2,4 +2,3 @@
 /.cargo
 /bin
 Cargo.lock
-build/
