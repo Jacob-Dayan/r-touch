@@ -57,7 +57,8 @@ Make sure you have [Rust and Cargo](https://rustup.rs/) installed on your machin
 ---
 
 ## Benchmarking
-    You can find the benchmarking results and get more information about the benchmarking process in the    [benchmarks directory](https://github.com/Jacob-Dayan/r-touch/tree/main/Benchmarks).
+
+You can find the benchmarking results and get more information about the benchmarking process in the [benchmarks directory](https://github.com/Jacob-Dayan/r-touch/tree/main/Benchmarks).
 ---
 
 ## Compatibility
