@@ -1,8 +1,6 @@
 use clap::Parser;
-
-use std::borrow::Cow;
 use std::path::{Path, PathBuf};
-use std::process::ExitCode;
+use std::{borrow::Cow, io};
 
 use rtouch::{ReplResult, create, log::logmgr};
 
@@ -30,7 +28,7 @@ struct TouchArgs<'a> {
     should_log: bool,
 }
 
-fn main() -> ExitCode {
+fn main() -> io::Result<()> {
     let cli = Cli::parse();
 
     // Prepare paths for Windows or Unix
@@ -56,15 +54,15 @@ fn main() -> ExitCode {
     for path in &touch_args.paths {
         match create(path, touch_args.create_parents) {
             Ok(ReplResult::Aborted) => {
-                logmgr::success_log("Aborted a replacement of a directory in a file.");
-                return ExitCode::SUCCESS;
+                logmgr::success_log("Aborted a replacement of a directory in a file.")?;
+                return Ok(());
             }
             Ok(ReplResult::Completed) => {
                 if touch_args.should_log {
                     logmgr::success_log(&format!(
                         "Replaced directory with file: {}",
                         path.display()
-                    ));
+                    ))?;
                 }
             }
             Ok(ReplResult::NotRequired) => {
@@ -74,19 +72,19 @@ fn main() -> ExitCode {
                         logmgr::success_log(&format!(
                             "File & parent folder created: {}",
                             path.display()
-                        ));
+                        ))?;
                     } else {
-                        logmgr::success_log(&format!("File Created: {}", path.display()));
+                        logmgr::success_log(&format!("File Created: {}", path.display()))?;
                     }
                 }
             }
             Err(error) => {
                 eprintln!("{error}");
-                logmgr::error_log(&format!("Unexpected Error : {error}"));
+                logmgr::error_log(&format!("Unexpected Error : {error}"))?;
                 continue;
             }
         }
     }
 
-    ExitCode::SUCCESS
+    Ok(())
 }
