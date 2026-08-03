@@ -19,12 +19,46 @@ Unlike the classic `touch` that silently fails or acts weirdly when encountering
 
 ## Installation
 
-Maka sure you have [Rust and Cargo](https://rustup.rs/) installed on your machine.
+Make sure you have [Rust and Cargo](https://rustup.rs/) installed on your machine.
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/rust-glazer/R-touch.git
+   git clone https://github.com/Jacob-Dayan/R-touch.git
    cd R-touch
+   ```
+---
+
+## Building from source
+
+---
+
+### Unix/Linux
+   if you are on _Unix_ or _Unix-Like_(e.g, Linux) OS:
+   ```bash
+         git clone https://github.com/Jacob-Dayan/r-touch.git
+         cd r-touch
+         ./build/build-unix.sh
+   ```
+
+### Windows
+   if you're in Windows(10+, user-level installation):
+   ```powershell
+       git clone https://github.com/Jacob-Dayan/r-touch.git
+       cd r-touch
+       ./build/build-user.ps1
+   ```
+   and for machin-level Windows installation (makes the executable output file available to all the users on the machin, recommended):
+   ```powershell
+      git clone https://github.com/Jacob-Dayan/r-touch
+      cd r-touch
+      ./build/build-system.ps1      
+   ```
+
+---
+
+## Benchmarking
+    You can find the benchmarking results and get more information about the benchmarking process in the    [benchmarks directory](https://github.com/Jacob-Dayan/r-touch/tree/main/Benchmarks).
+---
 
 ## Compatibility
 Linux 🐧
