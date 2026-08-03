@@ -45,7 +45,7 @@ pub fn replace<P: AsRef<Path>>(path: P) -> io::Result<ReplResult> {
                     logmgr::success_log(&format!(
                         "Replaced directory with file: {}",
                         path_ref.display()
-                    ));
+                    ))?;
                     Ok(ReplResult::Completed)
                 }
                 Err(e) => {
