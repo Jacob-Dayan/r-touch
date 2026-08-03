@@ -1,0 +1,64 @@
+user@PC:/dev/shm$ # using shared-memory to prevent IO bottlebecks
+user@PC:/dev/shm$ # doing --no-log because touch does not log, and rtouch does log by default
+user@PC:/dev/shm$ ls -A
+user@PC:/dev/shm$ time touch abcdefghijklmnopqrstuvwxyz
+
+real    0m0.002s
+user    0m0.000s
+sys     0m0.001s
+user@PC:/dev/shm$ rm abcdefghijklmnopqrstuvwxyz
+user@PC:/dev/shm$ time rtouch --no-log abcdefghijklmnopqrstuvwxyz
+
+real    0m0.001s
+user    0m0.000s
+sys     0m0.000s
+user@PC:/dev/shm$ # 1 - 0
+user@PC:/dev/shm$ rm abcdefghijklmnopqrstuvwxyz
+user@PC:/dev/shm$ ls -A
+user@PC:/dev/shm$ time touch 1234567890?
+'
+real    0m0.002s
+user    0m0.000s
+sys     0m0.002s
+user@PC:/dev/shm$ rm 1234567890\?
+user@PC:/dev/shm$ time rtouch --no-log 1234567890?
+
+real    0m0.001s
+user    0m0.000s
+sys     0m0.000s
+user@PC:/dev/shm$ # 2 - 0
+user@PC:/dev/shm$ time touch 'abcdefghijklmnopqrstuvwxyz12345678:90-+'
+
+real    0m0.002s
+user    0m0.002s
+sys     0m0.000s
+user@PC:/dev/shm$ time rtouch --no-log 'abcdefghijklmnopqrstuvwxyz12345678:90-+'
+
+real    0m0.001s
+user    0m0.000s
+sys     0m0.000s
+user@PC:/dev/shm$ # 3 - 0
+user@PC:/dev/shm$ # now let's try creating both file and directory
+user@PC:/dev/shm$ time touch --parent test/test.txt
+error: unexpected argument '--parent' found
+
+  tip: to pass '--parent' as a value, use '-- --parent'
+
+Usage: touch [OPTION]... [FILE]...
+
+For more information, try '--help'.
+
+real    0m0.002s
+user    0m0.000s
+sys     0m0.000s
+
+user@PC:/dev/shm$ time rtouch --parents --no-log  test/test.txt # `--parents` can also be shortened to `-p`
+
+real    0m0.001s
+user    0m0.000s
+sys     0m0.000s
+user@PC:/dev/shm$ ls
+'1234567890?'   abcdefghijklmnopqrstuvwxyz12345678:90-+   test
+user@PC:/dev/shm$ rm -rf ./* ./.*
+user@PC:/dev/shm$ # 4 - 0
+user@PC:/dev/shm$ # I think we have a clear winner!
