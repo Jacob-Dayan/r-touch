@@ -1,8 +1,10 @@
 use clap::Parser;
-use std::path::{Path, PathBuf};
-use std::{borrow::Cow, io};
-
 use rtouch::{ReplResult, create, log::logmgr};
+use std::{
+    borrow::Cow,
+    io,
+    path::{Path, PathBuf},
+};
 
 // Command line arguments parsing
 #[derive(Parser, Debug)]
