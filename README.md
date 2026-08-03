@@ -69,3 +69,10 @@ MacOS 🍎💻
 Windows 🪟
 
 Windows Subsystem For Linux (I don't have an emoji for that)
+
+
+
+---
+### Note on Release Timestamps & Tags
+---
+> **Notice:** Due to a tag migration script refactoring (`R-touch-*` to `v*`), GitHub Release publication dates were reset. The underlying code history, original commit dates, and Git tags remain fully preserved in the repository tree.
