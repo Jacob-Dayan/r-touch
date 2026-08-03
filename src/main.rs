@@ -10,7 +10,7 @@ use rtouch::{ReplResult, create, log::logmgr};
 #[derive(Parser, Debug)]
 #[command(
     name = "R-touch",
-    version = "1.0 Latest", // oops accidentally wrote 0.1
+    version = "1.0 Latest",
     about = "A custom touch implementation in Rust"
 )]
 struct Cli {
