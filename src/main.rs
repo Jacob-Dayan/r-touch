@@ -10,7 +10,7 @@ use std::{
 #[derive(Parser, Debug)]
 #[command(
     name = "R-touch",
-    version = "1.1.0, Latest until <date-of-new-version> ", // I'll put a date here when bumping version
+    version = "1.2.0, Latest until <date-of-new-version> ", // I'll put a date here when bumping version
     about = "A custom touch implementation in Rust"
 )]
 struct Cli {
