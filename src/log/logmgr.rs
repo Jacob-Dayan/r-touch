@@ -34,27 +34,31 @@ pub fn success_log(message: &str) -> io::Result<()> {
 
 // Logging of crash and error events
 pub fn error_log(message: &str) -> io::Result<()> {
-    match dirs_next::data_local_dir() {
-        Some(dir) => {
-            let path = dir
+    let path = match dirs_next::data_local_dir() {
+        Some(dir) => dir
+            .join("R-touch")
+            .join("logs")
+            .join("crashes")
+            .join("r-touch_err.log"),
+        None => match OS_ROOT {
+            Some(root) => PathBuf::from(root)
                 .join("R-touch")
                 .join("logs")
                 .join("crashes")
-                .join("r-touch_err.log");
-            logger::Logger::log(&path, message)?;
-        }
-        None => {
-            match OS_ROOT {
-                Some(root) => PathBuf::from(root),
-                None => {
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        "Cannot log actions.",
-                    ));
-                }
-            };
-        }
+                .join("r-touch_err.log"),
+            None => {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    "Cannot log actions.",
+                ));
+            }
+        },
     };
+
+    if let Err(e) = logger::Logger::log(&path, message) {
+        let e = format!("Cannot log error: {e}");
+        return Err(std::io::Error::new(std::io::ErrorKind::Other, e));
+    }
 
     Ok(())
 }
