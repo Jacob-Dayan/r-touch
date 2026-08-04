@@ -12,7 +12,7 @@ Unlike the classic `touch` that silently fails or acts weirdly when encountering
 
 * **Smart Directory Handling:** If you try to create a file where a directory already exists, `R-touch` stops and asks you what to do instead of blowing up.
 * **Parent Directory Creation:** Need to touch `deep/nested/folder/file.txt`? Use `-p` or `--parents` and let us build the path for you.
-* **Automatic Logging:** Logs successes and errors into your local OS data directory (`~/.local/share` on Linux or `AppData` on Windows) so you always have an audit trail.
+* **Automatic Logging:** Logs successes and errors into your local OS data directory (`~/.local/share` on Linux or `%LocalAppData%` on Windows) so you always have an audit trail.
 * **Platform-Friendly:** Built-in Windows path separator normalization (because backslashes shouldn't be your problem).
 
 ---
