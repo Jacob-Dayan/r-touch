@@ -23,8 +23,8 @@ Make sure you have [Rust and Cargo](https://rustup.rs/) installed on your machin
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/Jacob-Dayan/R-touch.git
-   cd R-touch
+   git clone https://github.com/Jacob-Dayan/r-touch.git
+   cd r-touch
    ```
 ---
 
