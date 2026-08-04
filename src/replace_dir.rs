@@ -16,6 +16,7 @@ pub enum ReplResult {
 }
 
 impl Action {
+    // Prompt user input in terminal
     pub fn new<P: AsRef<Path>>(path: P) -> Self {
         println!(
             "'{}' is a directory. Do you want to delete directory and replace it with the file? (y/n)",
