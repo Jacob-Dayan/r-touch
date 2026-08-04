@@ -1,7 +1,7 @@
 use crate::log::logmgr;
 
 use fs_err::{self as fs, File};
-use std::io::{self, ErrorKind};
+use std::io;
 use std::path::Path;
 
 pub enum Action {
@@ -16,7 +16,6 @@ pub enum ReplResult {
 }
 
 impl Action {
-    // Prompt user input in terminal
     pub fn new<P: AsRef<Path>>(path: P) -> Self {
         println!(
             "'{}' is a directory. Do you want to delete directory and replace it with the file? (y/n)",
@@ -40,26 +39,12 @@ pub fn replace<P: AsRef<Path>>(path: P) -> io::Result<ReplResult> {
     match action {
         Action::Accept => {
             fs::remove_dir_all(path_ref)?;
-            match File::create(path_ref) {
-                Ok(_) => {
-                    logmgr::success_log(&format!(
-                        "Replaced directory with file: {}",
-                        path_ref.display()
-                    ))?;
-                    Ok(ReplResult::Completed)
-                }
-                Err(e) => {
-                    match e.kind() {
-                        ErrorKind::IsADirectory => {
-                            eprintln!(
-                                "Error:{e}\nconsider removing the '/' char at the end of the path."
-                            );
-                        }
-                        _ => eprint!("{e}"),
-                    }
-                    Err(e)
-                }
-            }
+            File::create(path_ref)?;
+            logmgr::success_log(&format!(
+                "Replaced directory with file: {}",
+                path_ref.display()
+            ))?;
+            Ok(ReplResult::Completed)
         }
         Action::Abort => {
             println!("Abort");
