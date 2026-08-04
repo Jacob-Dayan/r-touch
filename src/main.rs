@@ -6,10 +6,11 @@ use std::{
     path::{Path, PathBuf},
 };
 
+// Command line arguments parsing
 #[derive(Parser, Debug)]
 #[command(
     name = "R-touch",
-    version = "1.2.0, Latest until <date-of-new-version> ",
+    version = "1.2.0, Latest until <date-of-new-version> ", // I'll put a date here when bumping version
     about = "A custom touch implementation in Rust"
 )]
 struct Cli {
@@ -32,6 +33,7 @@ struct TouchArgs<'a> {
 fn main() -> io::Result<()> {
     let cli = Cli::parse();
 
+    // Prepare paths for Windows or Unix
     let mut paths = Vec::with_capacity(cli.paths.len());
     for path_str in cli.paths {
         #[cfg(target_family = "windows")]
@@ -50,6 +52,7 @@ fn main() -> io::Result<()> {
         should_log: cli.should_log,
     };
 
+    // Main creation loop for provided paths
     for path in &touch_args.paths {
         match create(path, touch_args.create_parents) {
             Ok(ReplResult::Aborted) => {
@@ -65,6 +68,7 @@ fn main() -> io::Result<()> {
                 }
             }
             Ok(ReplResult::NotRequired) => {
+                // Logging section
                 if touch_args.should_log {
                     if touch_args.create_parents {
                         logmgr::success_log(&format!(
@@ -76,7 +80,9 @@ fn main() -> io::Result<()> {
                     }
                 }
             }
+
             Err(error) => {
+                // Centralized error handling and user messaging based on ErrorKind
                 match error.kind() {
                     ErrorKind::NotFound => {
                         eprintln!(
@@ -93,6 +99,7 @@ fn main() -> io::Result<()> {
                     }
                 }
 
+                // Logging error events according to CLI flags
                 if touch_args.should_log {
                     if error.kind() == ErrorKind::IsADirectory {
                         logmgr::error_log(&format!(
