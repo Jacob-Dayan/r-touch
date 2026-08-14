@@ -1,6 +1,6 @@
 use crate::log::logger;
 use crate::new_io_error;
-use std::{io, path::PathBuf};
+use std::{fmt, io, path::PathBuf};
 
 // not really OS_ROOT but the root directory for log files
 #[cfg(target_family = "windows")]
@@ -30,7 +30,7 @@ macro_rules! resolve_log_path {
     }};
 }
 // Logging of successful actions
-pub fn success_log(message: &str) -> io::Result<()> {
+pub fn success_log(message: &fmt::Arguments) -> io::Result<()> {
     let path = resolve_log_path!["R-touch", "logs", "r-touch.log"];
 
     if let Err(e) = logger::Logger::log(&path, message) {
@@ -41,7 +41,7 @@ pub fn success_log(message: &str) -> io::Result<()> {
 }
 
 // Logging of crash and error events
-pub fn error_log(message: &str) -> io::Result<()> {
+pub fn error_log(message: &fmt::Arguments) -> io::Result<()> {
     let path = resolve_log_path!["R-touch", "logs", "crashes", "file_creations.log"];
 
     if let Err(e) = logger::Logger::log(&path, message) {
@@ -53,7 +53,7 @@ pub fn error_log(message: &str) -> io::Result<()> {
 }
 
 // Logging of successful access time updates
-pub fn access_time_success(message: &str) -> io::Result<()> {
+pub fn access_time_success(message: &fmt::Arguments) -> io::Result<()> {
     let path = resolve_log_path!["R-touch", "logs", "access_time", "access-time_success.log"];
 
     if let Err(e) = logger::Logger::log(&path, message) {
@@ -65,7 +65,7 @@ pub fn access_time_success(message: &str) -> io::Result<()> {
 }
 
 // Logging of failed access time updates or parsing
-pub fn access_time_failure(message: &str) -> io::Result<()> {
+pub fn access_time_failure(message: &fmt::Arguments) -> io::Result<()> {
     let path = resolve_log_path!["R-touch", "logs", "crashes", "access-time_failure.log"];
 
     if let Err(e) = logger::Logger::log(&path, message) {

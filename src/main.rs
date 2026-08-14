@@ -79,14 +79,19 @@ fn run() -> io::Result<()> {
         Some(time_str) => match rtouch::datetime::parse_time_expression(time_str) {
             Ok(t) => Some(t),
             Err(parse_err) => {
-                let error_message = format!("Failed to parse access time: {parse_err}");
+                let error_message = format_args!("Failed to parse access time: {parse_err}");
                 if touch_args.should_log {
                     logmgr::access_time_failure(&error_message).unwrap_or_else(|e| {
                         eprintln!("Failed to log access time failure: {e}");
                     });
                 }
                 eprintln!("{error_message}");
-                return Err(io::Error::new(ErrorKind::InvalidInput, error_message));
+                return Err(io::Error::new(
+                    ErrorKind::InvalidInput,
+                    // must use .to_string() to avoid lifetimes (.as_str())
+                    // and implement Sync + Send
+                    error_message.to_string(),
+                ));
             }
         },
         None => None,
@@ -100,19 +105,18 @@ fn run() -> io::Result<()> {
                 match repl_res {
                     ReplResult::Aborted => {
                         if touch_args.should_log {
-                            logmgr::success_log("Aborted a replacement of a directory in a file.")
-                                .unwrap_or_else(|e| {
-                                    eprintln!(
-                                        "Failed to log abort status for {}: {e}",
-                                        path.display()
-                                    );
-                                });
+                            logmgr::success_log(&format_args!(
+                                "Aborted a replacement of a directory in a file."
+                            ))
+                            .unwrap_or_else(|e| {
+                                eprintln!("Failed to log abort status for {}: {e}", path.display());
+                            });
                         }
                         continue;
                     }
                     ReplResult::Completed => {
                         if touch_args.should_log {
-                            logmgr::success_log(&format!(
+                            logmgr::success_log(&format_args!(
                                 "Replaced directory with file: {}",
                                 path.display()
                             ))
@@ -123,12 +127,12 @@ fn run() -> io::Result<()> {
                     }
                     ReplResult::NotRequired => {
                         if touch_args.should_log {
-                            let msg = if touch_args.create_parents {
-                                format!("File & parent folder created: {}", path.display())
+                            let message = if touch_args.create_parents {
+                                format_args!("File & parent folder created: {}", path.display())
                             } else {
-                                format!("File Created: {}", path.display())
+                                format_args!("File Created: {}", path.display())
                             };
-                            logmgr::success_log(&msg).unwrap_or_else(|e| {
+                            logmgr::success_log(&message).unwrap_or_else(|e| {
                                 eprintln!("Failed to log creation for {}: {e}", path.display());
                             });
                         }
@@ -142,8 +146,10 @@ fn run() -> io::Result<()> {
                         eprintln!("Failed to set access time for {}: {err}", path.display());
 
                         if touch_args.should_log {
-                            let error_message =
-                                format!("Failed to set access time for {}: {err}", path.display());
+                            let error_message = format_args!(
+                                "Failed to set access time for {}: {err}",
+                                path.display()
+                            );
                             logmgr::access_time_failure(&error_message).unwrap_or_else(|e| {
                                 eprintln!(
                                     "Failed to log access time failure for {}: {e}",
@@ -152,7 +158,7 @@ fn run() -> io::Result<()> {
                             });
                         }
                     } else if touch_args.should_log {
-                        logmgr::access_time_success(&format!(
+                        logmgr::access_time_success(&format_args!(
                             "Successfully updated access time for {}",
                             path.display()
                         ))
@@ -186,12 +192,12 @@ fn run() -> io::Result<()> {
 
                 if touch_args.should_log {
                     let log_res = if error.kind() == ErrorKind::IsADirectory {
-                        logmgr::error_log(&format!(
+                        logmgr::error_log(&format_args!(
                             "Attempted to touch directory: {}",
                             path.display()
                         ))
                     } else {
-                        logmgr::error_log(&format!("Unexpected Error : {error}"))
+                        logmgr::error_log(&format_args!("Unexpected Error : {error}"))
                     };
 
                     log_res.unwrap_or_else(|e| {

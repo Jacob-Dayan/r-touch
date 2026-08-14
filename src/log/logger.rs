@@ -1,19 +1,24 @@
 use fs_err::{self as fs, OpenOptions};
-use std::io::{Result, Write};
-use std::path::Path;
-use std::time::SystemTime;
+
+use std::{
+    fmt,
+    io::{Result, Write},
+    path::Path,
+    time::SystemTime,
+};
 
 pub struct Logger;
 
 impl Logger {
     // Append log entry to file
-    pub fn log<P: AsRef<Path>>(file_path: P, message: &str) -> Result<()> {
+    pub fn log<P: AsRef<Path>>(file_path: P, message: &fmt::Arguments) -> Result<()> {
         let path = file_path.as_ref();
 
         if let Some(parent) = path.parent()
-            && !parent.as_os_str().is_empty() {
-                fs::create_dir_all(parent)?;
-            }
+            && !parent.as_os_str().is_empty()
+        {
+            fs::create_dir_all(parent)?;
+        }
 
         let mut file = OpenOptions::new().create(true).append(true).open(path)?;
 
