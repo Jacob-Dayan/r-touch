@@ -1,63 +1,76 @@
 use crate::log::logger;
+use crate::new_io_error;
 use std::{io, path::PathBuf};
+
+// not really OS_ROOT but the root directory for log files
 #[cfg(target_family = "windows")]
-const OS_ROOT: Option<&str> = Some("C:\\Users\\Public");
+const OS_ROOT: Option<&str> = Some("C:\\Users\\Public\\AppData\\Local");
 #[cfg(target_family = "unix")]
 const OS_ROOT: Option<&str> = Some("/var/log");
 #[cfg(not(any(target_family = "windows", target_family = "unix")))]
-// used to log from `.`,
-//  but in a case when both - dirs-next can't find data directory and we are working on an unfamiliar OS
-// we should just give up on logging
 const OS_ROOT: Option<&str> = None;
 
+macro_rules! resolve_log_path {
+    ($($path_segments:expr),+ $(,)?) => {{
+        let base_dir = match dirs_next::data_local_dir() {
+            Some(dir) => dir,
+            None => match OS_ROOT {
+                Some(root) => PathBuf::from(root),
+                None => {
+                    return Err(new_io_error!("Cannot log actions."));
+                }
+            },
+        };
+
+        let mut path = base_dir;
+        $(
+            path = path.join($path_segments);
+        )+
+        path
+    }};
+}
 // Logging of successful actions
 pub fn success_log(message: &str) -> io::Result<()> {
-    let path = match dirs_next::data_local_dir() {
-        Some(dir) => dir.join("R-touch").join("logs").join("r-touch.log"),
-        None => match OS_ROOT {
-            Some(root) => PathBuf::from(root),
-            None => {
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    "Cannot log actions.",
-                ));
-            }
-        },
-    };
+    let path = resolve_log_path!["R-touch", "logs", "r-touch.log"];
 
     if let Err(e) = logger::Logger::log(&path, message) {
         let e = format!("Cannot log actions: {e}");
-        return Err(std::io::Error::new(std::io::ErrorKind::Other, e));
+        return Err(new_io_error!(e));
     }
     Ok(())
 }
 
 // Logging of crash and error events
 pub fn error_log(message: &str) -> io::Result<()> {
-    let path = match dirs_next::data_local_dir() {
-        Some(dir) => dir
-            .join("R-touch")
-            .join("logs")
-            .join("crashes")
-            .join("r-touch_err.log"),
-        None => match OS_ROOT {
-            Some(root) => PathBuf::from(root)
-                .join("R-touch")
-                .join("logs")
-                .join("crashes")
-                .join("r-touch_err.log"),
-            None => {
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    "Cannot log actions.",
-                ));
-            }
-        },
-    };
+    let path = resolve_log_path!["R-touch", "logs", "crashes", "file_creations.log"];
 
     if let Err(e) = logger::Logger::log(&path, message) {
         let e = format!("Cannot log error: {e}");
-        return Err(std::io::Error::new(std::io::ErrorKind::Other, e));
+        return Err(new_io_error!(e));
+    }
+
+    Ok(())
+}
+
+// Logging of successful access time updates
+pub fn access_time_success(message: &str) -> io::Result<()> {
+    let path = resolve_log_path!["R-touch", "logs", "access_time", "access-time_success.log"];
+
+    if let Err(e) = logger::Logger::log(&path, message) {
+        let e = format!("Cannot log error: {e}");
+        return Err(new_io_error!(e));
+    }
+
+    Ok(())
+}
+
+// Logging of failed access time updates or parsing
+pub fn access_time_failure(message: &str) -> io::Result<()> {
+    let path = resolve_log_path!["R-touch", "logs", "crashes", "access-time_failure.log"];
+
+    if let Err(e) = logger::Logger::log(&path, message) {
+        let e = format!("Cannot log error: {e}");
+        return Err(new_io_error!(e));
     }
 
     Ok(())
