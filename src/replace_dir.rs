@@ -41,7 +41,7 @@ pub fn replace<P: AsRef<Path>>(path: P) -> io::Result<ReplResult> {
         Action::Accept => {
             fs::remove_dir_all(path_ref)?;
             File::create(path_ref)?;
-            logmgr::success_log(&format!(
+            logmgr::success_log(&format_args!(
                 "Replaced directory with file: {}",
                 path_ref.display()
             ))?;
