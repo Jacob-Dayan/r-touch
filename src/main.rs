@@ -11,21 +11,27 @@ use std::{
 #[derive(Parser, Debug)]
 #[command(
     name = "R-touch",
-    version = "1.3.0, Latest until <date-of-new-version> ", // I'll put a date here when bumping version
+    version = "1.3.0, Latest until <date-of-new-version> ",
     about = "A custom touch implementation, written in Rust"
 )]
-struct Cli {
+pub struct Cli {
     #[arg(required = true)]
-    paths: Vec<String>,
+    pub paths: Vec<String>,
 
     #[arg(short, long)]
-    parents: bool,
+    pub parents: bool,
 
-    #[arg(short = 'a', long = "access-time")]
+    #[arg(
+        short = 'a',
+        long = "access-time",
+        num_args = 0..=1,
+        default_missing_value = "now",
+        require_equals = true
+    )]
     pub access_time: Option<String>,
 
     #[arg(long = "no-log", default_value_t = true, action = clap::ArgAction::SetFalse)]
-    should_log: bool,
+    pub should_log: bool,
 }
 
 /// Internal options passed down to business logic processing.
@@ -38,23 +44,16 @@ struct TouchArgs<'a> {
 fn main() -> process::ExitCode {
     match run() {
         Ok(_) => process::ExitCode::SUCCESS,
-        Err(_) => {
-            // Error details are already printed to stderr per path during execution.
-            process::ExitCode::FAILURE
-        }
+        Err(_) => process::ExitCode::FAILURE,
     }
 }
 
 /// Runs the rtouch operations for all specified paths.
-/// Iterates over all requested paths without stopping on individual failures,
-/// allowing valid targets to be processed while capturing execution state.
-fn run() -> io::Result<()> {
+pub fn run() -> io::Result<()> {
     let cli = Cli::parse();
 
-    // Tracks if any single file operation or access time update fails.
     let mut has_failed = false;
 
-    // Prepare paths for Windows or Unix
     let mut paths = Vec::with_capacity(cli.paths.len());
     for path_str in cli.paths {
         #[cfg(target_family = "windows")]
@@ -73,8 +72,6 @@ fn run() -> io::Result<()> {
         should_log: cli.should_log,
     };
 
-    // Parse access time once outside the loop.
-    // Invalid time formats cause immediate failure before modifying files.
     let parsed_access_time = match &cli.access_time {
         Some(time_str) => match rtouch::datetime::parse_time_expression(time_str) {
             Ok(t) => Some(t),
@@ -88,8 +85,6 @@ fn run() -> io::Result<()> {
                 eprintln!("{error_message}");
                 return Err(io::Error::new(
                     ErrorKind::InvalidInput,
-                    // must use .to_string() to avoid lifetimes (.as_str())
-                    // and implement Sync + Send
                     error_message.to_string(),
                 ));
             }
@@ -97,80 +92,68 @@ fn run() -> io::Result<()> {
         None => None,
     };
 
-    // Unified path processing loop
     for path in &touch_args.paths {
-        match create(path, touch_args.create_parents) {
-            Ok(repl_res) => {
-                // Log creation status
-                match repl_res {
-                    ReplResult::Aborted => {
-                        if touch_args.should_log {
-                            logmgr::success_log(&format_args!(
-                                "Aborted a replacement of a directory in a file."
-                            ))
-                            .unwrap_or_else(|e| {
-                                eprintln!("Failed to log abort status for {}: {e}", path.display());
-                            });
-                        }
-                        continue;
+        match create(path, touch_args.create_parents, parsed_access_time) {
+            Ok(repl_res) => match repl_res {
+                ReplResult::Aborted => {
+                    if touch_args.should_log {
+                        logmgr::success_log(&format_args!(
+                            "Aborted a replacement of a directory in a file."
+                        ))
+                        .unwrap_or_else(|e| {
+                            eprintln!("Failed to log abort status for {}: {e}", path.display());
+                        });
                     }
-                    ReplResult::Completed => {
-                        if touch_args.should_log {
-                            logmgr::success_log(&format_args!(
-                                "Replaced directory with file: {}",
-                                path.display()
-                            ))
-                            .unwrap_or_else(|e| {
-                                eprintln!("Failed to log completion for {}: {e}", path.display());
-                            });
-                        }
-                    }
-                    ReplResult::NotRequired => {
-                        if touch_args.should_log {
-                            let message = if touch_args.create_parents {
-                                format_args!("File & parent folder created: {}", path.display())
-                            } else {
-                                format_args!("File Created: {}", path.display())
-                            };
-                            logmgr::success_log(&message).unwrap_or_else(|e| {
-                                eprintln!("Failed to log creation for {}: {e}", path.display());
-                            });
-                        }
-                    }
+                    continue;
                 }
-
-                // Update access time if provided
-                if let Some(access_time) = parsed_access_time {
-                    if let Err(err) = rtouch::update_access_time(path, access_time) {
-                        has_failed = true;
-                        eprintln!("Failed to set access time for {}: {err}", path.display());
-
-                        if touch_args.should_log {
-                            let error_message = format_args!(
-                                "Failed to set access time for {}: {err}",
+                ReplResult::Completed => {
+                    if touch_args.should_log {
+                        logmgr::success_log(&format_args!(
+                            "Replaced directory with file: {}",
+                            path.display()
+                        ))
+                        .unwrap_or_else(|e| {
+                            eprintln!("Failed to log completion for {}: {e}", path.display());
+                        });
+                        if parsed_access_time.is_some() {
+                            logmgr::access_time_success(&format_args!(
+                                "Successfully updated access time for {}",
                                 path.display()
-                            );
-                            logmgr::access_time_failure(&error_message).unwrap_or_else(|e| {
+                            ))
+                            .unwrap_or_else(|e| {
                                 eprintln!(
-                                    "Failed to log access time failure for {}: {e}",
+                                    "Failed to log access time success for {}: {e}",
                                     path.display()
                                 );
                             });
                         }
-                    } else if touch_args.should_log {
-                        logmgr::access_time_success(&format_args!(
-                            "Successfully updated access time for {}",
-                            path.display()
-                        ))
-                        .unwrap_or_else(|e| {
-                            eprintln!(
-                                "Failed to log access time success for {}: {e}",
-                                path.display()
-                            );
-                        });
                     }
                 }
-            }
+                ReplResult::NotRequired => {
+                    if touch_args.should_log {
+                        let message = if touch_args.create_parents {
+                            format_args!("File & parent folder created: {}", path.display())
+                        } else {
+                            format_args!("File Created: {}", path.display())
+                        };
+                        logmgr::success_log(&message).unwrap_or_else(|e| {
+                            eprintln!("Failed to log creation for {}: {e}", path.display());
+                        });
+                        if parsed_access_time.is_some() {
+                            logmgr::access_time_success(&format_args!(
+                                "Successfully updated access time for {}",
+                                path.display()
+                            ))
+                            .unwrap_or_else(|e| {
+                                eprintln!(
+                                    "Failed to log access time success for {}: {e}",
+                                    path.display()
+                                );
+                            });
+                        }
+                    }
+                }
+            },
             Err(error) => {
                 has_failed = true;
 
@@ -208,8 +191,6 @@ fn run() -> io::Result<()> {
         }
     }
 
-    // Return a general error if any individual file operation failed,
-    // signaling process failure without prematurely terminating execution during loop processing.
     if has_failed {
         return Err(io::Error::other(
             "One or more file operations failed during execution",
@@ -217,4 +198,51 @@ fn run() -> io::Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_cli_parsing_no_flags() {
+        let cli = Cli::try_parse_from(["rtouch", "file.txt"]).unwrap();
+        assert_eq!(cli.paths, vec!["file.txt"]);
+        assert_eq!(cli.access_time, None);
+        assert!(!cli.parents);
+        assert!(cli.should_log);
+    }
+
+    #[test]
+    fn test_cli_parsing_access_time_flag_only() {
+        let cli = Cli::try_parse_from(["rtouch", "-a", "file.txt"]).unwrap();
+        assert_eq!(cli.paths, vec!["file.txt"]);
+        assert_eq!(cli.access_time, Some("now".to_string()));
+    }
+
+    #[test]
+    fn test_cli_parsing_long_access_time_flag_only() {
+        let cli = Cli::try_parse_from(["rtouch", "--access-time", "file.txt"]).unwrap();
+        assert_eq!(cli.paths, vec!["file.txt"]);
+        assert_eq!(cli.access_time, Some("now".to_string()));
+    }
+
+    #[test]
+    fn test_cli_parsing_access_time_with_value() {
+        let cli = Cli::try_parse_from(["rtouch", "-a=2 days ago", "file.txt"]).unwrap();
+        assert_eq!(cli.paths, vec!["file.txt"]);
+        assert_eq!(cli.access_time, Some("2 days ago".to_string()));
+
+        let cli2 =
+            Cli::try_parse_from(["rtouch", "--access-time=2026-08-18 14:00", "file.txt"]).unwrap();
+        assert_eq!(cli2.paths, vec!["file.txt"]);
+        assert_eq!(cli2.access_time, Some("2026-08-18 14:00".to_string()));
+    }
+
+    #[test]
+    fn test_cli_parsing_multiple_paths_with_access_time() {
+        let cli = Cli::try_parse_from(["rtouch", "-a", "file1.txt", "file2.txt"]).unwrap();
+        assert_eq!(cli.paths, vec!["file1.txt", "file2.txt"]);
+        assert_eq!(cli.access_time, Some("now".to_string()));
+    }
 }
