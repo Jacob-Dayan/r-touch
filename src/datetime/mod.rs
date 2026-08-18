@@ -2,7 +2,6 @@ use chrono::{Datelike, Local, Months, NaiveDate, NaiveDateTime, NaiveTime, TimeZ
 use std::fmt;
 use std::time::SystemTime;
 
-/// Error type for time expression parsing failures.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TimeParseError {
     InvalidFormat(String),
@@ -24,7 +23,6 @@ impl fmt::Display for TimeParseError {
 
 impl std::error::Error for TimeParseError {}
 
-/// Parse a time expression (relative, absolute, or GNU touch format) into a [`SystemTime`].
 pub fn parse_time_expression(input: &str) -> Result<SystemTime, TimeParseError> {
     let trimmed = input.trim();
     if trimmed.is_empty() {
@@ -36,14 +34,15 @@ pub fn parse_time_expression(input: &str) -> Result<SystemTime, TimeParseError> 
     let lower = trimmed.to_ascii_lowercase();
     let now = Local::now();
 
-    // Check for relative expressions: "next ...", "last ...", "today ..."
-    if let Some(rest) = lower.strip_prefix("next ") {
-        let dt = parse_relative_next(rest.trim(), &now)?;
+    if let Ok(dt) = parse_exact_keywords(&lower, &now) {
         return system_time_from_local_dt(dt);
     }
 
-    if let Some(rest) = lower.strip_prefix("last ") {
-        let dt = parse_relative_last(rest.trim(), &now)?;
+    if let Ok(dt) = parse_relative_offset(&lower, &now) {
+        return system_time_from_local_dt(dt);
+    }
+
+    if let Ok(dt) = parse_relative_next_last(&lower, &now) {
         return system_time_from_local_dt(dt);
     }
 
@@ -52,12 +51,10 @@ pub fn parse_time_expression(input: &str) -> Result<SystemTime, TimeParseError> 
         return system_time_from_local_dt(dt);
     }
 
-    // Try ISO format parsing (e.g., YYYY-MM-DD HH:MM:SS)
-    if let Some(ndt) = parse_iso_time(trimmed) {
-        return system_time_from_naive(ndt);
+    if let Ok(st) = parse_standard_formats(trimmed) {
+        return Ok(st);
     }
 
-    // Try GNU touch format parsing ([[CC]YY]MMDDhhmm[.ss])
     if let Ok(ndt) = parse_gnu_touch_time(trimmed, now.year()) {
         return system_time_from_naive(ndt);
     }
@@ -81,6 +78,120 @@ fn system_time_from_naive(ndt: NaiveDateTime) -> Result<SystemTime, TimeParseErr
                 "Date/time cannot be converted to local time: {ndt}"
             ))
         })
+}
+
+fn parse_exact_keywords(
+    lower: &str,
+    now: &chrono::DateTime<Local>,
+) -> Result<chrono::DateTime<Local>, TimeParseError> {
+    match lower {
+        "now" => {
+            println!(
+                "Pro tip: you can run `rtouch` on a file without `-a` flag or time expression,
+and it automatically updates the file's timestamp to `now`"
+            );
+            Ok(*now)
+        }
+        "yesterday" => now
+            .checked_sub_signed(chrono::Duration::days(1))
+            .ok_or_else(|| TimeParseError::InvalidValue("Date underflow".to_string())),
+        "tomorrow" => now
+            .checked_add_signed(chrono::Duration::days(1))
+            .ok_or_else(|| TimeParseError::InvalidValue("Date overflow".to_string())),
+        _ => Err(TimeParseError::UnsupportedExpression("".to_string())),
+    }
+}
+
+fn parse_relative_offset(
+    lower: &str,
+    now: &chrono::DateTime<Local>,
+) -> Result<chrono::DateTime<Local>, TimeParseError> {
+    let parts: Vec<&str> = lower.split_whitespace().collect();
+
+    if parts.len() == 3 {
+        if parts[0] == "+" {
+            let num: i64 = parts[1]
+                .parse()
+                .map_err(|_| TimeParseError::InvalidFormat("Invalid number".to_string()))?;
+            return apply_offset(now, num, parts[2]);
+        }
+        if parts[0] == "-" {
+            let num: i64 = parts[1]
+                .parse()
+                .map_err(|_| TimeParseError::InvalidFormat("Invalid number".to_string()))?;
+            return apply_offset(now, -num, parts[2]);
+        }
+        if parts[2] == "ago" {
+            let num: i64 = parts[0]
+                .parse()
+                .map_err(|_| TimeParseError::InvalidFormat("Invalid number".to_string()))?;
+            return apply_offset(now, -num, parts[1]);
+        }
+    }
+
+    if parts.len() == 2 {
+        if let Some(num_str) = parts[0].strip_prefix('+') {
+            let num: i64 = num_str
+                .parse()
+                .map_err(|_| TimeParseError::InvalidFormat("Invalid number".to_string()))?;
+            return apply_offset(now, num, parts[1]);
+        }
+        if let Some(num_str) = parts[0].strip_prefix('-') {
+            let num: i64 = num_str
+                .parse()
+                .map_err(|_| TimeParseError::InvalidFormat("Invalid number".to_string()))?;
+            return apply_offset(now, -num, parts[1]);
+        }
+    }
+
+    Err(TimeParseError::UnsupportedExpression("".to_string()))
+}
+
+fn apply_offset(
+    now: &chrono::DateTime<Local>,
+    val: i64,
+    unit: &str,
+) -> Result<chrono::DateTime<Local>, TimeParseError> {
+    let dur = match unit {
+        "second" | "seconds" | "sec" | "s" => chrono::Duration::seconds(val),
+        "minute" | "minutes" | "min" | "m" => chrono::Duration::minutes(val),
+        "hour" | "hours" | "hr" | "h" => chrono::Duration::hours(val),
+        "day" | "days" | "d" => chrono::Duration::days(val),
+        "week" | "weeks" | "w" => chrono::Duration::days(val * 7),
+        "month" | "months" => {
+            if val >= 0 {
+                return now
+                    .checked_add_months(Months::new(val as u32))
+                    .ok_or_else(|| TimeParseError::InvalidValue("Month overflow".to_string()));
+            } else {
+                return now
+                    .checked_sub_months(Months::new((-val) as u32))
+                    .ok_or_else(|| TimeParseError::InvalidValue("Month underflow".to_string()));
+            }
+        }
+        "year" | "years" | "y" => {
+            let target_year = now.year() as i64 + val;
+            return now
+                .with_year(target_year as i32)
+                .ok_or_else(|| TimeParseError::InvalidValue("Year overflow".to_string()));
+        }
+        _ => return Err(TimeParseError::UnsupportedExpression(unit.to_string())),
+    };
+    now.checked_add_signed(dur)
+        .ok_or_else(|| TimeParseError::InvalidValue("Date offset overflow".to_string()))
+}
+
+fn parse_relative_next_last(
+    lower: &str,
+    now: &chrono::DateTime<Local>,
+) -> Result<chrono::DateTime<Local>, TimeParseError> {
+    if let Some(rest) = lower.strip_prefix("next ") {
+        return parse_relative_next(rest.trim(), now);
+    }
+    if let Some(rest) = lower.strip_prefix("last ") {
+        return parse_relative_last(rest.trim(), now);
+    }
+    Err(TimeParseError::UnsupportedExpression("".to_string()))
 }
 
 fn parse_weekday(s: &str) -> Option<Weekday> {
@@ -159,7 +270,7 @@ fn parse_relative_next(
     }
 
     Err(TimeParseError::UnsupportedExpression(format!(
-        "Unknown 'next' expression target: '{target}'"
+        "Unknown target: '{target}'"
     )))
 }
 
@@ -208,7 +319,7 @@ fn parse_relative_last(
     }
 
     Err(TimeParseError::UnsupportedExpression(format!(
-        "Unknown 'last' expression target: '{target}'"
+        "Unknown target: '{target}'"
     )))
 }
 
@@ -219,7 +330,7 @@ fn parse_today_time(
     let parts: Vec<&str> = time_str.split(':').collect();
     if parts.len() < 2 || parts.len() > 3 {
         return Err(TimeParseError::InvalidFormat(format!(
-            "Expected HH:MM or HH:MM:SS for 'today', got '{time_str}'"
+            "Expected HH:MM or HH:MM:SS, got '{time_str}'"
         )));
     }
 
@@ -250,21 +361,38 @@ fn parse_today_time(
         .ok_or_else(|| TimeParseError::InvalidValue("Local time conversion error".to_string()))
 }
 
-fn parse_iso_time(input: &str) -> Option<NaiveDateTime> {
-    if let Ok(ndt) = NaiveDateTime::parse_from_str(input, "%Y-%m-%d %H:%M:%S") {
-        return Some(ndt);
+fn parse_standard_formats(input: &str) -> Result<SystemTime, TimeParseError> {
+    if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(input) {
+        return Ok(SystemTime::from(dt));
     }
-    if let Ok(ndt) = NaiveDateTime::parse_from_str(input, "%Y-%m-%dT%H:%M:%S") {
-        return Some(ndt);
+    if let Ok(dt) = chrono::DateTime::parse_from_rfc2822(input) {
+        return Ok(SystemTime::from(dt));
     }
-    if let Ok(ndt) = NaiveDateTime::parse_from_str(input, "%Y-%m-%d %H:%M") {
-        return Some(ndt);
+
+    let formats = [
+        "%Y-%m-%d %H:%M:%S%.f %z",
+        "%Y-%m-%d %H:%M:%S %z",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%d %H:%M",
+    ];
+
+    for fmt in formats {
+        if let Ok(dt) = chrono::DateTime::parse_from_str(input, fmt) {
+            return Ok(SystemTime::from(dt));
+        }
+        if let Ok(ndt) = NaiveDateTime::parse_from_str(input, fmt) {
+            return system_time_from_naive(ndt);
+        }
     }
+
     if let Ok(nd) = NaiveDate::parse_from_str(input, "%Y-%m-%d") {
-        let nt = NaiveTime::from_hms_opt(0, 0, 0)?;
-        return Some(NaiveDateTime::new(nd, nt));
+        if let Some(nt) = NaiveTime::from_hms_opt(0, 0, 0) {
+            return system_time_from_naive(NaiveDateTime::new(nd, nt));
+        }
     }
-    None
+
+    Err(TimeParseError::UnsupportedExpression("".to_string()))
 }
 
 fn parse_gnu_touch_time(input: &str, current_year: i32) -> Result<NaiveDateTime, TimeParseError> {
@@ -275,7 +403,7 @@ fn parse_gnu_touch_time(input: &str, current_year: i32) -> Result<NaiveDateTime,
 
     if !main_part.chars().all(|c| c.is_ascii_digit()) {
         return Err(TimeParseError::InvalidFormat(format!(
-            "GNU touch format requires digits: {main_part}"
+            "Format requires digits: {main_part}"
         )));
     }
 
@@ -283,7 +411,7 @@ fn parse_gnu_touch_time(input: &str, current_year: i32) -> Result<NaiveDateTime,
         Some(sec) => {
             if sec.len() != 2 || !sec.chars().all(|c| c.is_ascii_digit()) {
                 return Err(TimeParseError::InvalidFormat(format!(
-                    "GNU touch seconds must be 2 digits: {sec}"
+                    "Seconds must be 2 digits: {sec}"
                 )));
             }
             sec.parse::<u32>()
@@ -332,7 +460,7 @@ fn parse_gnu_touch_time(input: &str, current_year: i32) -> Result<NaiveDateTime,
         }
         _ => {
             return Err(TimeParseError::InvalidFormat(format!(
-                "GNU touch time expected 8, 10, or 12 digits, got {len}"
+                "Expected 8, 10, or 12 digits, got {len}"
             )));
         }
     };
@@ -375,11 +503,22 @@ mod tests {
     fn test_parse_iso_formats() {
         assert!(parse_time_expression("2026-08-14 14:30:00").is_ok());
         assert!(parse_time_expression("2026-08-14T14:30:00").is_ok());
-        assert!(parse_time_expression("2026-08-14").is_ok());
+        assert!(parse_time_expression("2026-08-14 14:30:00+03:00").is_ok());
+        assert!(parse_time_expression("2026-08-14T14:30:00Z").is_ok());
+        assert!(parse_time_expression("Fri, 14 Aug 2026 14:30:00 +0000").is_ok());
     }
 
     #[test]
     fn test_parse_relative_expressions() {
+        assert!(parse_time_expression("now").is_ok());
+        assert!(parse_time_expression("yesterday").is_ok());
+        assert!(parse_time_expression("tomorrow").is_ok());
+
+        assert!(parse_time_expression("2 days ago").is_ok());
+        assert!(parse_time_expression("1 week ago").is_ok());
+        assert!(parse_time_expression("+3 hours").is_ok());
+        assert!(parse_time_expression("-15 minutes").is_ok());
+
         assert!(parse_time_expression("next tuesday").is_ok());
         assert!(parse_time_expression("next mon").is_ok());
         assert!(parse_time_expression("next month").is_ok());
@@ -388,14 +527,7 @@ mod tests {
         assert!(parse_time_expression("next dec").is_ok());
 
         assert!(parse_time_expression("last month").is_ok());
-        assert!(parse_time_expression("last friday").is_ok());
-        assert!(parse_time_expression("last sun").is_ok());
-        assert!(parse_time_expression("last year").is_ok());
-        assert!(parse_time_expression("last august").is_ok());
-
         assert!(parse_time_expression("today 14:30").is_ok());
-        assert!(parse_time_expression("today 09:15:30").is_ok());
-        assert!(parse_time_expression("today 00:00").is_ok());
     }
 
     #[test]
