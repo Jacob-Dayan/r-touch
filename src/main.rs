@@ -11,7 +11,7 @@ use std::{
 #[derive(Parser, Debug)]
 #[command(
     name = "R-touch",
-    version = "1.3.0, Latest until <date-of-new-version> ",
+    version = "1.3.0, Latest until 18th of August, 2026",
     about = "A custom touch implementation, written in Rust"
 )]
 pub struct Cli {
