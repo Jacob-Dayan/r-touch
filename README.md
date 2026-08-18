@@ -14,7 +14,7 @@ Unlike the classic `touch` that silently fails or acts weirdly when encountering
 * **Parent Directory Creation:** Need to touch `deep/nested/folder/file.txt`? Use `-p` or `--parents` and let us build the path for you.
 * **Automatic Logging:** Logs successes and errors into your local OS data directory (`~/.local/share` on Linux or `%LocalAppData%` on Windows) so you always have an audit trail.
 * **Platform-Friendly:** Built-in Windows path separator normalization (because backslashes shouldn't be your problem).
-
+* **Access time interpretation:** Access time interpreter for r-touch interps access time values from the command line arguments just like `touch`, but unlike `touch`, it outputs much better error messages in cases where trying to set an invalid time value.
 ---
 
 ## Installation
