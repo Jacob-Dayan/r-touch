@@ -19,8 +19,13 @@ Unlike the classic `touch` that silently fails or acts weirdly when encountering
 
 ## Installation
 
-Make sure you have [Rust and Cargo](https://rustup.rs/) installed on your machine.
 
+Make sure you have [Rust and Cargo](https://rustup.rs/) installed on your machine.
+## Installing from crates.io (one commmand)
+```bash
+    cargo install rtouch
+```
+## Building from source
 1. Clone this repository:
    ```bash
    git clone https://github.com/Jacob-Dayan/r-touch.git
@@ -28,9 +33,6 @@ Make sure you have [Rust and Cargo](https://rustup.rs/) installed on your machin
    ```
 ---
 
-## Building from source
-
----
 
 ### Unix/Linux
    if you are on _Unix_ or _Unix-Like_(e.g, Linux) OS:
