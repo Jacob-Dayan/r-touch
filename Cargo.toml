@@ -2,7 +2,8 @@
 name = "rtouch"
 version = "1.3.0"
 edition = "2024"
-license = "GPLv3-or-later"
+description= "A custom touch implementation, written in rust"
+license = "GPL-3.0-or-later"
 
 
 [dependencies]
