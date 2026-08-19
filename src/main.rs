@@ -1,5 +1,5 @@
 use clap::Parser;
-use rtouch_core::{ReplResult, create, log::logmgr};
+use rtouch_core::{ReplResult, create, log::logmgr, new_io_error};
 use std::{
     borrow::Cow,
     io::{self, ErrorKind},
@@ -70,7 +70,7 @@ fn main() -> process::ExitCode {
 /// ```no_run
 ///    // ...
 ///    if has_failed {
-///        return Err(io::Error::other(
+///        return Err(new_io_error!(
 ///            "One or more file operations failed during execution",
 ///        ));
 ///    }
@@ -269,8 +269,8 @@ pub fn run() -> io::Result<()> {
     }
 
     if has_failed {
-        return Err(io::Error::other(
-            "One or more file operations failed during execution",
+        return Err(new_io_error!(
+            "One or more file operations failed during execution"
         ));
     }
 
@@ -328,8 +328,7 @@ mod tests {
         assert_eq!(cli.paths, vec!["file.txt"]);
         assert_eq!(cli.date, Some("2 days ago".to_string()));
 
-        let cli2 =
-            Cli::try_parse_from(["rtouch", "--date=2026-08-18 14:00", "file.txt"]).unwrap();
+        let cli2 = Cli::try_parse_from(["rtouch", "--date=2026-08-18 14:00", "file.txt"]).unwrap();
         assert_eq!(cli2.paths, vec!["file.txt"]);
         assert_eq!(cli2.date, Some("2026-08-18 14:00".to_string()));
     }
