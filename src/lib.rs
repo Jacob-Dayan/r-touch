@@ -19,10 +19,22 @@ macro_rules! new_io_error {
 }
 
 /// Core file creation and timestamp management logic.
+///
+/// If `create_parents` is true, parent directories are created if they do not exist.
+/// If `path` is an existing directory, it replaces the directory with an empty file.
+/// If `path` does not exist, a new empty file is created.
+///
+/// When updating timestamps:
+/// - `time` is the timestamp to apply (if `None`, `SystemTime::now()` is used).
+/// - `atime`: if `true` and `mtime` is `false`, only the access time is updated.
+/// - `mtime`: if `true` and `atime` is `false`, only the modification time is updated.
+/// - If both `atime` and `mtime` are `false` (or both `true`), both access and modification times are updated.
 pub fn create<P: AsRef<Path>>(
     path: P,
     create_parents: bool,
-    access_time: Option<SystemTime>,
+    time: Option<SystemTime>,
+    atime: bool,
+    mtime: bool,
 ) -> io::Result<ReplResult> {
     let path_ref = path.as_ref();
 
@@ -33,13 +45,24 @@ pub fn create<P: AsRef<Path>>(
         fs::create_dir_all(parent)?;
     }
 
+    let target_time = time.unwrap_or_else(SystemTime::now);
+    let (set_atime, set_mtime) = match (atime, mtime) {
+        (true, false) => (true, false),
+        (false, true) => (false, true),
+        _ => (true, true),
+    };
+
     if path_ref.is_dir() {
         let res = replace_dir::replace(path_ref)?;
-        if let ReplResult::Completed = res
-            && let Some(atime) = access_time
-        {
+        if let ReplResult::Completed = res {
             let file = OpenOptions::new().write(true).open(path_ref)?;
-            let times = FileTimes::new().set_accessed(atime);
+            let mut times = FileTimes::new();
+            if set_atime {
+                times = times.set_accessed(target_time);
+            }
+            if set_mtime {
+                times = times.set_modified(target_time);
+            }
             file.set_times(times)?;
         }
         return Ok(res);
@@ -47,19 +70,23 @@ pub fn create<P: AsRef<Path>>(
 
     if !path_ref.exists() {
         let file = File::create(path_ref)?;
-        if let Some(atime) = access_time {
-            let times = FileTimes::new().set_accessed(atime);
-            file.set_times(times)?;
+        let mut times = FileTimes::new();
+        if set_atime {
+            times = times.set_accessed(target_time);
         }
+        if set_mtime {
+            times = times.set_modified(target_time);
+        }
+        file.set_times(times)?;
     } else {
         let file = OpenOptions::new().write(true).open(path_ref)?;
-        let times = match access_time {
-            Some(atime) => FileTimes::new().set_accessed(atime),
-            None => {
-                let now = SystemTime::now();
-                FileTimes::new().set_accessed(now).set_modified(now)
-            }
-        };
+        let mut times = FileTimes::new();
+        if set_atime {
+            times = times.set_accessed(target_time);
+        }
+        if set_mtime {
+            times = times.set_modified(target_time);
+        }
         file.set_times(times)?;
     }
 
@@ -76,6 +103,19 @@ pub fn update_access_time<P: AsRef<Path>>(path: P, access_time: SystemTime) -> i
     Ok(())
 }
 
+/// Explicitly update modification time (`mtime`) of a target path.
+pub fn update_modification_time<P: AsRef<Path>>(
+    path: P,
+    modification_time: SystemTime,
+) -> io::Result<()> {
+    let path_ref = path.as_ref();
+    let file = OpenOptions::new().write(true).open(path_ref)?;
+
+    let times = FileTimes::new().set_modified(modification_time);
+    file.set_times(times)?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -88,7 +128,7 @@ mod tests {
         fs::create_dir_all(&temp_dir).unwrap();
 
         let file_path = temp_dir.join("test_file.txt");
-        let res = create(&file_path, false, None).unwrap();
+        let res = create(&file_path, false, None, false, false).unwrap();
         assert!(matches!(res, ReplResult::NotRequired));
         assert!(file_path.exists());
 
@@ -103,7 +143,7 @@ mod tests {
 
         let file_path = temp_dir.join("test_file_atime.txt");
         let past_time = SystemTime::now() - Duration::from_secs(3600 * 24 * 10);
-        let res = create(&file_path, false, Some(past_time)).unwrap();
+        let res = create(&file_path, false, Some(past_time), true, false).unwrap();
         assert!(matches!(res, ReplResult::NotRequired));
         assert!(file_path.exists());
 
@@ -150,7 +190,7 @@ mod tests {
         drop(file);
 
         let requested_atime = SystemTime::now() - Duration::from_secs(60);
-        let res = create(&file_path, false, Some(requested_atime)).unwrap();
+        let res = create(&file_path, false, Some(requested_atime), true, false).unwrap();
         assert!(matches!(res, ReplResult::NotRequired));
 
         let metadata = fs::metadata(&file_path).unwrap();
@@ -175,7 +215,52 @@ mod tests {
     }
 
     #[test]
-    fn test_existing_file_without_access_time_updates_both_times() {
+    fn test_existing_file_with_mtime_preserves_atime() {
+        let temp_dir = std::env::temp_dir().join("rtouch_test_mtime");
+        let _ = fs::remove_dir_all(&temp_dir);
+        fs::create_dir_all(&temp_dir).unwrap();
+
+        let file_path = temp_dir.join("test_existing_mtime.txt");
+        fs::write(&file_path, "initial content").unwrap();
+
+        let old_mtime = SystemTime::now() - Duration::from_secs(3600 * 10);
+        let old_atime = SystemTime::now() - Duration::from_secs(3600 * 5);
+        let file = fs::OpenOptions::new().write(true).open(&file_path).unwrap();
+        file.set_times(
+            std::fs::FileTimes::new()
+                .set_accessed(old_atime)
+                .set_modified(old_mtime),
+        )
+        .unwrap();
+        drop(file);
+
+        let requested_mtime = SystemTime::now() - Duration::from_secs(60);
+        let res = create(&file_path, false, Some(requested_mtime), false, true).unwrap();
+        assert!(matches!(res, ReplResult::NotRequired));
+
+        let metadata = fs::metadata(&file_path).unwrap();
+        let atime = metadata.accessed().unwrap();
+        let mtime = metadata.modified().unwrap();
+
+        let mtime_diff = if mtime > requested_mtime {
+            mtime.duration_since(requested_mtime).unwrap()
+        } else {
+            requested_mtime.duration_since(mtime).unwrap()
+        };
+        assert!(mtime_diff < Duration::from_secs(2));
+
+        let atime_diff = if atime > old_atime {
+            atime.duration_since(old_atime).unwrap()
+        } else {
+            old_atime.duration_since(atime).unwrap()
+        };
+        assert!(atime_diff < Duration::from_secs(2));
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_existing_file_without_flags_updates_both_times() {
         let temp_dir = std::env::temp_dir().join("rtouch_test_4");
         let _ = fs::remove_dir_all(&temp_dir);
         fs::create_dir_all(&temp_dir).unwrap();
@@ -195,7 +280,7 @@ mod tests {
         drop(file);
 
         let before_touch = SystemTime::now();
-        let res = create(&file_path, false, None).unwrap();
+        let res = create(&file_path, false, None, false, false).unwrap();
         assert!(matches!(res, ReplResult::NotRequired));
 
         let metadata = fs::metadata(&file_path).unwrap();
