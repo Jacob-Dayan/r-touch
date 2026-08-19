@@ -128,6 +128,7 @@ cargo install rtouch
 #### Unix/Linux
 If you are on _Unix_ or _Unix-like_ (e.g. Linux, macOS) OS:
 ```bash
+chmod +x ./build/build_unix.sh
 ./build/build-unix.sh
 ```
 
