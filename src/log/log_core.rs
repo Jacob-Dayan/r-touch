@@ -7,9 +7,9 @@ use std::{
     time::SystemTime,
 };
 
-pub struct Logger;
+pub struct LogCore;
 
-impl Logger {
+impl LogCore {
     // Append log entry to file
     pub fn log<P: AsRef<Path>>(file_path: P, message: &fmt::Arguments) -> Result<()> {
         let path = file_path.as_ref();

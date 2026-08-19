@@ -1,4 +1,4 @@
-use crate::log::logger;
+use crate::log::log_core;
 use crate::new_io_error;
 use std::{fmt, io, path::PathBuf};
 
@@ -33,7 +33,7 @@ macro_rules! resolve_log_path {
 pub fn success_log(message: &fmt::Arguments) -> io::Result<()> {
     let path = resolve_log_path!["R-touch", "logs", "r-touch.log"];
 
-    if let Err(e) = logger::Logger::log(&path, message) {
+    if let Err(e) = log_core::LogCore::log(&path, message) {
         let e = format!("Cannot log actions: {e}");
         return Err(new_io_error!(e));
     }
@@ -44,7 +44,7 @@ pub fn success_log(message: &fmt::Arguments) -> io::Result<()> {
 pub fn error_log(message: &fmt::Arguments) -> io::Result<()> {
     let path = resolve_log_path!["R-touch", "logs", "crashes", "file_creations.log"];
 
-    if let Err(e) = logger::Logger::log(&path, message) {
+    if let Err(e) = log_core::LogCore::log(&path, message) {
         let e = format!("Cannot log error: {e}");
         return Err(new_io_error!(e));
     }
@@ -56,7 +56,7 @@ pub fn error_log(message: &fmt::Arguments) -> io::Result<()> {
 pub fn access_time_success(message: &fmt::Arguments) -> io::Result<()> {
     let path = resolve_log_path!["R-touch", "logs", "access_time", "access-time_success.log"];
 
-    if let Err(e) = logger::Logger::log(&path, message) {
+    if let Err(e) = log_core::LogCore::log(&path, message) {
         let e = format!("Cannot log error: {e}");
         return Err(new_io_error!(e));
     }
@@ -68,7 +68,7 @@ pub fn access_time_success(message: &fmt::Arguments) -> io::Result<()> {
 pub fn access_time_failure(message: &fmt::Arguments) -> io::Result<()> {
     let path = resolve_log_path!["R-touch", "logs", "crashes", "access-time_failure.log"];
 
-    if let Err(e) = logger::Logger::log(&path, message) {
+    if let Err(e) = log_core::LogCore::log(&path, message) {
         let e = format!("Cannot log error: {e}");
         return Err(new_io_error!(e));
     }

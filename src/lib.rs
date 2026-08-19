@@ -3,7 +3,7 @@ use std::{fs::FileTimes, io, path::Path, time::SystemTime};
 
 pub mod datetime;
 pub mod log {
-    pub mod logger;
+    pub mod log_core;
     pub mod logmgr;
 }
 pub mod replace_dir;
