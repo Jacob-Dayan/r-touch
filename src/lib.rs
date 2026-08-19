@@ -29,7 +29,7 @@ macro_rules! new_io_error {
 /// - `atime`: if `true` and `mtime` is `false`, only the access time is updated.
 /// - `mtime`: if `true` and `atime` is `false`, only the modification time is updated.
 /// - If both `atime` and `mtime` are `false` (or both `true`), both access and modification times are updated.
-pub fn create<P: AsRef<Path>>(
+pub fn touch<P: AsRef<Path>>(
     path: P,
     create_parents: bool,
     time: Option<SystemTime>,
@@ -128,7 +128,7 @@ mod tests {
         fs::create_dir_all(&temp_dir).unwrap();
 
         let file_path = temp_dir.join("test_file.txt");
-        let res = create(&file_path, false, None, false, false).unwrap();
+        let res = touch(&file_path, false, None, false, false).unwrap();
         assert!(matches!(res, ReplResult::NotRequired));
         assert!(file_path.exists());
 
@@ -143,7 +143,7 @@ mod tests {
 
         let file_path = temp_dir.join("test_file_atime.txt");
         let past_time = SystemTime::now() - Duration::from_secs(3600 * 24 * 10);
-        let res = create(&file_path, false, Some(past_time), true, false).unwrap();
+        let res = touch(&file_path, false, Some(past_time), true, false).unwrap();
         assert!(matches!(res, ReplResult::NotRequired));
         assert!(file_path.exists());
 
@@ -190,7 +190,7 @@ mod tests {
         drop(file);
 
         let requested_atime = SystemTime::now() - Duration::from_secs(60);
-        let res = create(&file_path, false, Some(requested_atime), true, false).unwrap();
+        let res = touch(&file_path, false, Some(requested_atime), true, false).unwrap();
         assert!(matches!(res, ReplResult::NotRequired));
 
         let metadata = fs::metadata(&file_path).unwrap();
@@ -235,7 +235,7 @@ mod tests {
         drop(file);
 
         let requested_mtime = SystemTime::now() - Duration::from_secs(60);
-        let res = create(&file_path, false, Some(requested_mtime), false, true).unwrap();
+        let res = touch(&file_path, false, Some(requested_mtime), false, true).unwrap();
         assert!(matches!(res, ReplResult::NotRequired));
 
         let metadata = fs::metadata(&file_path).unwrap();
@@ -280,7 +280,7 @@ mod tests {
         drop(file);
 
         let before_touch = SystemTime::now();
-        let res = create(&file_path, false, None, false, false).unwrap();
+        let res = touch(&file_path, false, None, false, false).unwrap();
         assert!(matches!(res, ReplResult::NotRequired));
 
         let metadata = fs::metadata(&file_path).unwrap();

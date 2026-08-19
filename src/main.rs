@@ -1,5 +1,5 @@
 use clap::Parser;
-use rtouch_core::{ReplResult, create, log::logmgr, new_io_error};
+use rtouch_core::{ReplResult, log::logmgr, new_io_error, touch};
 use std::{
     borrow::Cow,
     io::{self, ErrorKind},
@@ -11,7 +11,7 @@ use std::{
 #[derive(Parser, Debug)]
 #[command(
     name = "R-touch",
-    version = "1.4.0, latest until 21th of August, 2026",
+    version = "1.4.1, Pre-release",
     about = "A custom touch implementation, written in Rust"
 )]
 pub struct Cli {
@@ -164,7 +164,7 @@ pub fn run() -> io::Result<()> {
     };
 
     for path in &touch_args.paths {
-        match create(
+        match touch(
             path,
             touch_args.create_parents,
             parsed_date,
