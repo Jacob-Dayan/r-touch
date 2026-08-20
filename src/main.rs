@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 
 use clap::Parser;
-use rtouch::{ReplResult, log::logmgr, new_io_error, touch};
+use rtouch::{ReplResult, log::logmgr, touch};
 use std::{
     borrow::Cow,
     io::{self, ErrorKind},
