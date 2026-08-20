@@ -1,6 +1,6 @@
 # R-touch 🦀
 
-The drop-in replacement that has its own date time parser as a library in [`crates.io`](https://crates.io/crates/rtouch), independently logs successes, failures, and time-modifications that we all've been waiting for, because it's well known that touch is the only tool separating us from world peace, and ruining our workflows! who doesn't need a RIIR for the [`GNU touch`](https://www.gnu.org/software/coreutils/touch)?.
+The drop-in replacement that has its own date time parser as a library in [`crates.io`](https://crates.io/crates/rtouch), independently logs successes, failures, and time-modifications that we all've been waiting for, because it's well known that [`touch`](https://www.gnu.org/software/coreutils/touch) is the only tool separating us from world peace, and ruining our workflows! who doesn't need a RIIR for the [`GNU touch`](https://www.gnu.org/software/coreutils/touch)?.
 Jokes aside, rtouch is a fast, modern, and slightly opinionated recreation of the classic Unix `touch` command, built from scratch in Rust.
 
 Unlike the classic `touch` that silently fails or acts weirdly when encountering directories, `R-touch` actually talks to you, manages its own system logs safely, and ensures you don't accidentally trash your system layout.
