@@ -22,7 +22,7 @@ fn main() -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use std::time::{Duration, SystemTime};
+    use std::time::Duration;
     use super::touch_with_expr;
 
     /// The file's atime should be approximately 24 h in the past.
@@ -34,7 +34,7 @@ mod tests {
         touch_with_expr(path.to_str().unwrap(), "yesterday").unwrap();
 
         let atime = std::fs::metadata(&path).unwrap().accessed().unwrap();
-        let expected = SystemTime::now() - Duration::from_secs(3_600 * 24);
+        let expected = rtouch_core::datetime::parse_time_expression("yesterday").unwrap();
         let diff = if atime > expected { atime.duration_since(expected) } else { expected.duration_since(atime) };
         // Allow up to 5 seconds of tolerance (test runner startup + OS rounding).
         assert!(diff.unwrap() < Duration::from_secs(5));

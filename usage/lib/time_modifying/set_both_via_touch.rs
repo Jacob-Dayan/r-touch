@@ -4,13 +4,14 @@
 //! updates **both** timestamps to the supplied time — or to `SystemTime::now()`
 //! when no explicit time is given.
 
-use std::{io, time::{Duration, SystemTime}};
+use std::io;
 
 fn main() -> io::Result<()> {
     let path = std::env::temp_dir().join("rtouch_usage_both_times.txt");
     std::fs::write(&path, b"")?;
 
-    let target = SystemTime::now() - Duration::from_secs(3_600 * 48);
+    let target = rtouch_core::datetime::parse_time_expression("2 days ago")
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e.to_string()))?;
     // atime=false, mtime=false → both are updated
     rtouch_core::touch(&path, false, Some(target), false, false)?;
     println!("Both timestamps set to 48 h ago: {}", path.display());
@@ -21,7 +22,7 @@ fn main() -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use std::time::{Duration, SystemTime};
+    use std::time::Duration;
 
     /// Both atime and mtime must reflect the requested time.
     #[test]
@@ -29,7 +30,7 @@ mod tests {
         let path = std::env::temp_dir().join("rtouch_usage_both_times_t1.txt");
         std::fs::write(&path, b"").unwrap();
 
-        let target = SystemTime::now() - Duration::from_secs(3_600 * 48);
+        let target = rtouch_core::datetime::parse_time_expression("2 days ago").unwrap();
         rtouch_core::touch(&path, false, Some(target), false, false).unwrap();
 
         let meta = std::fs::metadata(&path).unwrap();
@@ -47,7 +48,7 @@ mod tests {
         let path = std::env::temp_dir().join("rtouch_usage_both_times_t2.txt");
         std::fs::write(&path, b"").unwrap();
 
-        let target = SystemTime::now() - Duration::from_secs(3_600);
+        let target = rtouch_core::datetime::parse_time_expression("1h ago").unwrap();
         // atime=true AND mtime=true → both updated (same as both-false)
         rtouch_core::touch(&path, false, Some(target), true, true).unwrap();
 
