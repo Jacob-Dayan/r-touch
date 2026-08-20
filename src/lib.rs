@@ -10,6 +10,78 @@
 use fs_err::{self as fs, File, OpenOptions};
 use std::{fs::FileTimes, io, path::Path, time::SystemTime};
 
+/// Configuration for log file paths used by the library logging subsystem.
+///
+/// This struct allows the binary or callers to provide explicit log file
+/// locations rather than relying on global statics inside the library.
+///
+/// Typical fields:
+/// - `success_log`: general success/activity log (r-touch.log)
+/// - `error_log`: crash/error log (crashes/...)
+/// - `atime_log`: access-time update log (time_modifications/atime_modification.log)
+/// - `mtime_log`: modification-time update log (time_modifications/mtime_modification.log)
+pub struct LogConfig {
+    /// Path to the general success log file.
+    pub success_log: std::path::PathBuf,
+    /// Path to the crash/error log file.
+    pub error_log: std::path::PathBuf,
+    /// Path to the access-time (atime) modifications log file.
+    pub atime_log: std::path::PathBuf,
+    /// Path to the modification-time (mtime) modifications log file.
+    pub mtime_log: std::path::PathBuf,
+}
+
+impl LogConfig {
+    /// Construct a new `LogConfig` from explicit paths.
+    pub fn new(
+        success_log: std::path::PathBuf,
+        error_log: std::path::PathBuf,
+        atime_log: std::path::PathBuf,
+        mtime_log: std::path::PathBuf,
+    ) -> Self {
+        Self {
+            success_log,
+            error_log,
+            atime_log,
+            mtime_log,
+        }
+    }
+
+    /// Build a default `LogConfig` from environment variables with sensible fallbacks
+    /// and without relying on external crates. On Unix-like systems this prefers
+    /// `$XDG_DATA_HOME` and falls back to `~/.local/share`. On Windows it uses
+    /// `%LOCALAPPDATA%`.
+    pub fn from_env_defaults() -> Self {
+        use std::env;
+        use std::path::PathBuf;
+
+        #[cfg(target_family = "windows")]
+        let base: PathBuf = env::var_os("LOCALAPPDATA")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from(r"C:\Users\Public\AppData\Local"));
+
+        #[cfg(target_family = "unix")]
+        let base: PathBuf = env::var_os("XDG_DATA_HOME")
+            .map(PathBuf::from)
+            .or_else(|| env::var_os("HOME").map(|h| PathBuf::from(h).join(".local/share")))
+            .unwrap_or_else(|| PathBuf::from("/tmp"));
+
+        let success_log = base.join("R-touch").join("logs").join("r-touch.log");
+        let error_log = base
+            .join("R-touch")
+            .join("logs")
+            .join("crashes")
+            .join("file_creations.log");
+
+        let time_dir = base.join("R-touch").join("logs").join("time_modifications");
+        let atime_log = time_dir.join("atime_modification.log");
+        let mtime_log = time_dir.join("mtime_modification.log");
+
+        Self::new(success_log, error_log, atime_log, mtime_log)
+    }
+}
+
+
 pub mod datetime;
 pub mod log {
     pub mod log_core;

@@ -4,13 +4,13 @@
 //! create `foo.txt` in the current directory and immediately clean up.
 
 macro_rules! foo {
-    () => {
-        rtouch::touch("foo.txt", false, None, false, false)
+    ($name:expr) => {
+        rtouch::touch($name, false, None, false, false)
     };
 }
 
 fn main() {
-    foo!().unwrap();
+    foo!("foo.txt").unwrap();
     std::fs::remove_file("foo.txt").unwrap();
 }
 
@@ -20,14 +20,14 @@ mod tests {
 
     #[test]
     fn create_foo() {
-        foo!().unwrap();
-        assert!(std::path::Path::new("foo.txt").exists());
-        std::fs::remove_file("foo.txt").unwrap();
+        foo!("foo_create.txt").unwrap();
+        assert!(std::path::Path::new("foo_create.txt").exists());
+        let _ = std::fs::remove_file("foo_create.txt");
     }
 
     #[test]
     fn is_ok() {
-        assert!(foo!().is_ok());
-        let _ = std::fs::remove_file("foo.txt");
+        assert!(foo!("foo_is_ok.txt").is_ok());
+        let _ = std::fs::remove_file("foo_is_ok.txt");
     }
 }
