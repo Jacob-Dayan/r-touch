@@ -11,10 +11,19 @@ use chrono::{Datelike, Local, Months, NaiveDate, NaiveDateTime, NaiveTime, TimeZ
 use std::fmt;
 use std::time::SystemTime;
 
+/// Error type returned by [`parse_time_expression`] when an input string
+/// cannot be converted to a [`std::time::SystemTime`].
+///
+/// Each variant carries a human-readable description of the problem.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TimeParseError {
+    /// The string matched a known pattern but was structurally malformed
+    /// (e.g. wrong number of digits, missing separators).
     InvalidFormat(String),
+    /// The string was structurally valid but contained an out-of-range value
+    /// (e.g. month 13, hour 25).
     InvalidValue(String),
+    /// The string did not match any supported format or keyword expression.
     UnsupportedExpression(String),
 }
 
