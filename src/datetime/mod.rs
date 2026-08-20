@@ -103,13 +103,7 @@ fn parse_exact_keywords(
     now: &chrono::DateTime<Local>,
 ) -> Result<chrono::DateTime<Local>, TimeParseError> {
     match lower {
-        "now" => {
-            println!(
-                "Pro tip: you can run `rtouch` on a file without `-a` flag or time expression,
-and it automatically updates the file's timestamp to `now`"
-            );
-            Ok(*now)
-        }
+        "now" => Ok(*now),
         "yesterday" => now
             .checked_sub_signed(chrono::Duration::days(1))
             .ok_or_else(|| TimeParseError::InvalidValue("Date underflow".to_string())),
