@@ -70,6 +70,12 @@ fn main() -> process::ExitCode {
     }
 }
 
+/// Shortcut for `std::io::Error::new(std::io::ErrorKind::Other, e)`
+macro_rules! new_io_error {
+    ($e:expr) => {
+        std::io::Error::new(std::io::ErrorKind::Other, $e)
+    };
+}
 /// Runs the rtouch operations for all specified paths.
 ///
 /// Parses the CLI arguments and processes each path.
