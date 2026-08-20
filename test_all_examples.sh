@@ -19,34 +19,28 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# יצירת פרויקט יחיד לשימוש חוזר
+TEST_PROJECT_DIR="${BASE_TMP_DIR}/test_runner"
+cargo new --bin "${TEST_PROJECT_DIR}" --quiet
+cd "${TEST_PROJECT_DIR}"
+
+# התקנת התלות פעם אחת בלבד
+cargo add rtouch --path "${PROJECT_ROOT}" --quiet || cargo add rtouch --quiet
+
 find "${USAGE_DIR}" -type f -name "*.rs" | while read -r file_path; do
     filename=$(basename "${file_path}")
-    project_name="${filename%.rs}"
-    
-    project_name=$(echo "${project_name}" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9_-' '_')
 
     echo "=========================================="
     echo "Testing: ${file_path}"
-    echo "Project name: ${project_name}"
     echo "=========================================="
 
-    TEST_PROJECT_DIR="${BASE_TMP_DIR}/${project_name}"
-
-    cd "${BASE_TMP_DIR}"
-    cargo new --bin "${project_name}" --quiet
-    cd "${TEST_PROJECT_DIR}"
-
-    cargo add rtouch --path "${PROJECT_ROOT}" --quiet || cargo add rtouch --quiet
-
-    cp "${file_path}" src/main.rs
+    cp "${file_path}" "${TEST_PROJECT_DIR}/src/main.rs"
 
     echo "Running cargo test..."
     cargo test
 
-    cd "${PROJECT_ROOT}"
-    rm -rf "${TEST_PROJECT_DIR}"
-
     echo -e "Test for ${filename} passed successfully!\n"
 done
 
+cd "${PROJECT_ROOT}"
 echo "All tests passed successfully!"
