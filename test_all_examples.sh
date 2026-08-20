@@ -19,12 +19,10 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# יצירת פרויקט יחיד לשימוש חוזר
 TEST_PROJECT_DIR="${BASE_TMP_DIR}/test_runner"
 cargo new --bin "${TEST_PROJECT_DIR}" --quiet
 cd "${TEST_PROJECT_DIR}"
 
-# התקנת התלות פעם אחת בלבד
 cargo add rtouch --path "${PROJECT_ROOT}" --quiet || cargo add rtouch --quiet
 
 find "${USAGE_DIR}" -type f -name "*.rs" | while read -r file_path; do
