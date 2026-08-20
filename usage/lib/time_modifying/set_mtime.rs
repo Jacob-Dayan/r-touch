@@ -5,14 +5,15 @@
 
 use std::{
     io,
-    time::{Duration, SystemTime},
+    time::Duration,
 };
 
 fn main() -> io::Result<()> {
     let path = std::env::temp_dir().join("rtouch_usage_mtime.txt");
     std::fs::write(&path, b"")?;
 
-    let three_days_ago = SystemTime::now() - Duration::from_secs(3_600 * 24 * 3);
+    let three_days_ago = rtouch_core::datetime::parse_time_expression("3 days ago")
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e.to_string()))?;
     rtouch_core::set_modification_time(&path, three_days_ago)?;
     println!(
         "Modification time set to three days ago: {}",
@@ -25,7 +26,7 @@ fn main() -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use std::time::{Duration, SystemTime};
+    use std::time::Duration;
 
     /// After calling `set_modification_time`, the file's mtime must match
     /// the requested value (within a 2-second tolerance).
@@ -34,7 +35,7 @@ mod tests {
         let path = std::env::temp_dir().join("rtouch_usage_set_mtime.txt");
         std::fs::write(&path, b"").unwrap();
 
-        let target = SystemTime::now() - Duration::from_secs(3_600 * 24 * 3);
+        let target = rtouch_core::datetime::parse_time_expression("3 days ago").unwrap();
         rtouch_core::set_modification_time(&path, target).unwrap();
 
         let got = std::fs::metadata(&path).unwrap().modified().unwrap();

@@ -102,7 +102,10 @@ pub fn touch<P: AsRef<Path>>(
     Ok(ReplResult::NotRequired)
 }
 
-/// Explicitly update access time (`atime`) of a target path.
+/// Explicitly set access time (`atime`) of a target path.
+/// gets `path` and `access_time`.
+/// - `path`: The path of the file to update.
+/// - `access_time`: The new access time to set.
 pub fn set_access_time<P: AsRef<Path>>(path: P, access_time: SystemTime) -> io::Result<()> {
     let path_ref = path.as_ref();
     let file = OpenOptions::new().write(true).open(path_ref)?;
@@ -112,7 +115,10 @@ pub fn set_access_time<P: AsRef<Path>>(path: P, access_time: SystemTime) -> io::
     Ok(())
 }
 
-/// Explicitly update modification time (`mtime`) of a target path.
+/// Explicitly set modification time (`mtime`) of a target path.
+/// gets `path` and `modification_time`.
+/// - `path`: The path of the file to update.
+/// - `modification_time`: The new modification time to set.
 pub fn set_modification_time<P: AsRef<Path>>(
     path: P,
     modification_time: SystemTime,

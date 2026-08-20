@@ -14,7 +14,7 @@ fn main() -> io::Result<()> {
     let path = std::env::temp_dir().join("rtouch_usage_atime.txt");
     std::fs::write(&path, b"")?;
 
-    let one_hour_ago = SystemTime::now() - Duration::from_secs(3_600);
+    let one_hour_ago = rtouch_core::datetime::parse_time_expression("1h ago")?;
     rtouch_core::set_access_time(&path, one_hour_ago)?;
     println!("Access time set to one hour ago: {}", path.display());
 
@@ -24,7 +24,7 @@ fn main() -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use std::time::{Duration, SystemTime};
+    use std::time::SystemTime;
 
     /// After calling `set_access_time`, the file's atime must match the
     /// requested value (within a 2-second tolerance for OS rounding).
@@ -33,7 +33,7 @@ mod tests {
         let path = std::env::temp_dir().join("rtouch_usage_set_atime.txt");
         std::fs::write(&path, b"").unwrap();
 
-        let target = SystemTime::now() - Duration::from_secs(7_200);
+        let target = rtouch_core::datetime::parse_time_expression("2h ago").unwrap();
         rtouch_core::set_access_time(&path, target).unwrap();
 
         let got = std::fs::metadata(&path).unwrap().accessed().unwrap();
