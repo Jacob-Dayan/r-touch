@@ -1,39 +1,49 @@
-// R-touch CLI application
-// Copyright (C) 2026 Jacob Dayan
+// R-touch Library
+// Copyright (c) 2026 Jacob Dayan
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-
-use crate::log::logmgr;
+// Licensed under the Apache License, Version 2.0 or the MIT License,
+// at your option. You may not use this file except in compliance with
+// one of these licenses.
 
 use fs_err::{self as fs, File};
 use std::io;
 use std::path::Path;
 
-pub enum Action {
-    Abort,
-    Accept,
-}
-
+/// Outcome of a directory-to-file replacement attempt.
+///
+/// Returned by [`replace`] and propagated up to [`crate::touch`] so that
+/// callers (e.g. the CLI binary) can decide how to log or report the result.
 pub enum ReplResult {
+    /// The directory was successfully removed and replaced with an empty file.
     Completed,
+    /// The user declined the replacement prompt; no changes were made.
     Aborted,
+    /// No replacement was necessary (the path was not a directory).
     NotRequired,
 }
 
+/// User-input decision for a directory-replacement prompt.
+///
+/// Constructed from stdin via [`Action::new`] and consumed by [`replace`].
+pub enum Action {
+    /// The user confirmed the replacement (`y` / `yes` / empty input).
+    Accept,
+    /// The user declined the replacement or stdin could not be read.
+    Abort,
+}
+
 impl Action {
-    // Prompt user input in terminal
+    /// Prompts the user interactively and returns their decision.
+    ///
+    /// Prints a confirmation message to stderr, then reads a single line from
+    /// stdin. Any input that is not `y`, `yes`, or an empty line is treated as
+    /// [`Action::Abort`].  A read error also yields [`Action::Abort`].
     pub fn new<P: AsRef<Path>>(path: P) -> Self {
-        println!(
-            "'{}' is a directory. Do you want to delete directory and replace it with the file? (y/n)",
-            path.as_ref().display()
+        eprintln!(
+            "'{p}' is a directory. Do you want to delete directory and replace it with the file? (y/n)",
+            p = path.as_ref().display()
         );
         let mut input = String::new();
         if io::stdin().read_line(&mut input).is_err() {
@@ -46,6 +56,19 @@ impl Action {
     }
 }
 
+/// Attempts to replace the directory at `path` with an empty file.
+///
+/// Prompts the user interactively via [`Action::new`]. If the user confirms,
+/// the directory tree is removed with [`fs_err::remove_dir_all`] and an empty
+/// file is created in its place.
+///
+/// Logging is intentionally **not** performed here; the caller is responsible
+/// for logging the returned [`ReplResult`].
+///
+/// # Errors
+///
+/// Returns an [`std::io::Error`] if the directory cannot be removed or the
+/// replacement file cannot be created.
 pub fn replace<P: AsRef<Path>>(path: P) -> io::Result<ReplResult> {
     let path_ref = path.as_ref();
     let action = Action::new(path_ref);
@@ -54,10 +77,6 @@ pub fn replace<P: AsRef<Path>>(path: P) -> io::Result<ReplResult> {
         Action::Accept => {
             fs::remove_dir_all(path_ref)?;
             File::create(path_ref)?;
-            logmgr::success_log(&format_args!(
-                "Replaced directory with file: {}",
-                path_ref.display()
-            ))?;
             Ok(ReplResult::Completed)
         }
         Action::Abort => {

@@ -7,9 +7,9 @@
 // at your option. You may not use this file except in compliance with
 // one of these licenses.
 
-use crate::log::log_core;
+use crate::log::log_core::LogCore;
 use crate::new_io_error;
-use std::{fmt, io, path::PathBuf};
+use std::{fmt, io, path::PathBuf, sync::LazyLock};
 
 // not really OS_ROOT but the root directory for log files
 #[cfg(target_family = "windows")]
@@ -19,68 +19,123 @@ const OS_ROOT: Option<&str> = Some("/var/log");
 #[cfg(not(any(target_family = "windows", target_family = "unix")))]
 const OS_ROOT: Option<&str> = None;
 
-macro_rules! resolve_log_path {
-    ($($path_segments:expr),+ $(,)?) => {{
-        let base_dir = match dirs_next::data_local_dir() {
-            Some(dir) => dir,
-            None => match OS_ROOT {
-                Some(root) => PathBuf::from(root),
-                None => {
-                    return Err(new_io_error!("Cannot log actions."));
-                }
-            },
-        };
-
-        let mut path = base_dir;
-        $(
-            path = path.join($path_segments);
-        )+
-        path
-    }};
+/// Resolves the base data-local directory, falling back to the OS-specific
+/// root when [`dirs_next::data_local_dir`] returns `None`.
+///
+/// Returns `None` only on platforms where neither source is available.
+fn base_dir() -> Option<PathBuf> {
+    dirs_next::data_local_dir().or_else(|| OS_ROOT.map(PathBuf::from))
 }
-// Logging of successful actions
+
+/// Constructs a log-file path from the base directory and the given sub-path
+/// segments, panicking at static-init time if no base directory is available.
+///
+/// Because this is only called from `LazyLock` initialisers it panics instead
+/// of returning an error; a missing log directory is an unrecoverable
+/// configuration problem for this binary.
+fn make_log_path(segments: &[&str]) -> PathBuf {
+    let mut path = base_dir().expect("Cannot determine log directory");
+    for seg in segments {
+        path = path.join(seg);
+    }
+    path
+}
+
+// ── per-category loggers ──────────────────────────────────────────────────────
+
+/// Logger for general successful operations.
+///
+/// Writes to `<data_local_dir>/R-touch/logs/r-touch.log`.
+static SUCCESS: LazyLock<LogCore> = LazyLock::new(|| {
+    LogCore::new(make_log_path(&["R-touch", "logs", "r-touch.log"]))
+});
+
+/// Logger for file-creation errors and crash events.
+///
+/// Writes to `<data_local_dir>/R-touch/logs/crashes/file_creations.log`.
+static ERROR: LazyLock<LogCore> = LazyLock::new(|| {
+    LogCore::new(make_log_path(&[
+        "R-touch",
+        "logs",
+        "crashes",
+        "file_creations.log",
+    ]))
+});
+
+/// Logger for successful access-time updates.
+///
+/// Writes to `<data_local_dir>/R-touch/logs/access_time/access-time_success.log`.
+static ACCESS_TIME_SUCCESS: LazyLock<LogCore> = LazyLock::new(|| {
+    LogCore::new(make_log_path(&[
+        "R-touch",
+        "logs",
+        "access_time",
+        "access-time_success.log",
+    ]))
+});
+
+/// Logger for failed access-time updates or date-expression parsing errors.
+///
+/// Writes to `<data_local_dir>/R-touch/logs/crashes/access-time_failure.log`.
+static ACCESS_TIME_FAILURE: LazyLock<LogCore> = LazyLock::new(|| {
+    LogCore::new(make_log_path(&[
+        "R-touch",
+        "logs",
+        "crashes",
+        "access-time_failure.log",
+    ]))
+});
+
+// ── public API ────────────────────────────────────────────────────────────────
+
+/// Logs a successful file operation.
+///
+/// Appends `message` to the general success log
+/// (`<data_local_dir>/R-touch/logs/r-touch.log`).
+///
+/// # Errors
+///
+/// Returns an error if the log file cannot be written.
 pub fn success_log(message: &fmt::Arguments) -> io::Result<()> {
-    let path = resolve_log_path!["R-touch", "logs", "r-touch.log"];
-
-    if let Err(e) = log_core::LogCore::log(&path, message) {
-        let e = format!("Cannot log actions: {e}");
-        return Err(new_io_error!(e));
-    }
-    Ok(())
+    SUCCESS.log(message).map_err(|e| new_io_error!(format!("Cannot log actions: {e}")))
 }
 
-// Logging of crash and error events
+/// Logs a file-creation error or unexpected crash event.
+///
+/// Appends `message` to the error/crash log
+/// (`<data_local_dir>/R-touch/logs/crashes/file_creations.log`).
+///
+/// # Errors
+///
+/// Returns an error if the log file cannot be written.
 pub fn error_log(message: &fmt::Arguments) -> io::Result<()> {
-    let path = resolve_log_path!["R-touch", "logs", "crashes", "file_creations.log"];
-
-    if let Err(e) = log_core::LogCore::log(&path, message) {
-        let e = format!("Cannot log error: {e}");
-        return Err(new_io_error!(e));
-    }
-
-    Ok(())
+    ERROR.log(message).map_err(|e| new_io_error!(format!("Cannot log error: {e}")))
 }
 
-// Logging of successful access time updates
+/// Logs a successful access-time or modification-time update.
+///
+/// Appends `message` to the access-time success log
+/// (`<data_local_dir>/R-touch/logs/access_time/access-time_success.log`).
+///
+/// # Errors
+///
+/// Returns an error if the log file cannot be written.
 pub fn access_time_success(message: &fmt::Arguments) -> io::Result<()> {
-    let path = resolve_log_path!["R-touch", "logs", "access_time", "access-time_success.log"];
-
-    if let Err(e) = log_core::LogCore::log(&path, message) {
-        let e = format!("Cannot log error: {e}");
-        return Err(new_io_error!(e));
-    }
-
-    Ok(())
+    ACCESS_TIME_SUCCESS
+        .log(message)
+        .map_err(|e| new_io_error!(format!("Cannot log access time success: {e}")))
 }
 
-// Logging of failed access time updates or parsing
+/// Logs a failed access-time update or date-expression parsing failure.
+///
+/// Appends `message` to the access-time failure log
+/// (`<data_local_dir>/R-touch/logs/crashes/access-time_failure.log`).
+///
+/// # Errors
+///
+/// Returns an error if the log file cannot be written.
 pub fn access_time_failure(message: &fmt::Arguments) -> io::Result<()> {
-    let path = resolve_log_path!["R-touch", "logs", "crashes", "access-time_failure.log"];
-
-    if let Err(e) = log_core::LogCore::log(&path, message) {
-        let e = format!("Cannot log error: {e}");
-        return Err(new_io_error!(e));
-    }
-
-    Ok(())
+    ACCESS_TIME_FAILURE
+        .log(message)
+        .map_err(|e| new_io_error!(format!("Cannot log access time failure: {e}")))
 }
