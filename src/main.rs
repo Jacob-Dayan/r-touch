@@ -18,6 +18,7 @@ use std::{
     io::{self, ErrorKind},
     path::{Path, PathBuf},
     process,
+    sync::LazyLock,
 };
 
 /// Command line arguments parsing structure.
@@ -62,9 +63,16 @@ struct TouchArgs<'a> {
     mtime: bool,
 }
 
+// Default LogConfig for the binary. Using a LazyLock ensures the default
+// paths are computed once at startup and can be referenced throughout the
+// process lifetime.
+static DEFAULT_LOG_CONFIG: LazyLock<rtouch::LogConfig> = LazyLock::new(|| {
+    rtouch::LogConfig::from_env_defaults()
+});
+
 /// Matches the [`run`] function and returns the appropriate exit code.
 fn main() -> process::ExitCode {
-    match run() {
+    match run(&DEFAULT_LOG_CONFIG) {
         Ok(_) => process::ExitCode::SUCCESS,
         Err(_) => process::ExitCode::FAILURE,
     }
@@ -80,65 +88,7 @@ macro_rules! new_io_error {
 /// Runs the rtouch operations for all specified paths.
 ///
 /// Parses the CLI arguments and processes each path.
-///
-/// When an error occurs, we continue to next `path` in `cli.paths` until there are no more paths to process.
-/// But that creates a problem: in CLI tools where you call rtouch with `&&`,
-/// you want to send a signal to the shell that tells whether the process has failed or not.
-/// So, we create a mutable local boolean `has_failed` that is set to `true` when an error occurs.
-/// Then, at the end, instead of returning `Ok(())`, we check `has_failed` and return `Err` if it is `true`:
-///
-/// ```no_run
-///    // ...
-///    if has_failed {
-///        return Err(new_io_error!(
-///            "One or more file operations failed during execution",
-///        ));
-///    }
-///
-///    Ok(())
-/// ```
-///
-/// We create a mutable local Vector `paths` with a capacity of `cli.paths.len()` to avoid reallocations.
-/// Then iterating over `cli.paths` with `for path_str in cli.paths` and replacing `/` with `\` if on Windows to normalize the path.
-/// We use [`Cow::Owned`] to avoid unnecessary allocations when normalizing the path.
-///
-/// After normalizing the paths, we push each path into `paths`.
-///
-/// Then, we create a [`TouchArgs`]:
-///
-/// ```no_run
-/// let touch_args = TouchArgs {
-///     paths,
-///     create_parents: cli.parents,
-///     should_log: cli.should_log,
-///     atime: cli.atime,
-///     mtime: cli.mtime,
-/// };
-/// ```
-///
-/// Next, if a `--date` / `-d` string argument was supplied in `cli.date`, we parse it using
-/// [`rtouch::datetime::parse_time_expression`]. If parsing fails, an error is logged (if logging is enabled),
-/// an error message is printed to `stderr`, and an [`io::ErrorKind::InvalidInput`] error is returned immediately.
-///
-/// We then iterate through each normalized path in `touch_args.paths` and invoke [`rtouch::create`], passing:
-/// - `path`: The path to touch or create.
-/// - `create_parents`: Whether to create parent directories (`-p`, `--parents`).
-/// - `parsed_date`: Optional parsed target timestamp (or current time if not specified).
-/// - `atime`: Whether to update only the access time (`-a`, `--atime`).
-/// - `mtime`: Whether to update only the modification time (`-m`, `--mtime`).
-///
-/// For each path, the result is matched:
-/// - [`ReplResult::Aborted`]: If directory replacement was aborted by the user, we log the status and continue to the next path.
-/// - [`ReplResult::Completed`]: If directory replacement completed, we log the success and timestamp update.
-/// - [`ReplResult::NotRequired`]: If standard file creation/touch was performed, we log the creation and timestamp update.
-/// - `Err(error)`: We set `has_failed = true`, print an informative error message (suggesting `-p` if the parent directory was missing, or warning if a trailing slash on a directory path caused an issue), and record the error to the log.
-///
-/// # Errors
-///
-/// Returns an [`io::Error`] if:
-/// - A date expression provided via `--date` fails to parse ([`io::ErrorKind::InvalidInput`]).
-/// - One or more file operations failed during the touch execution loop.
-pub fn run() -> io::Result<()> {
+pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
     let cli = Cli::parse();
 
     let mut has_failed = false;
@@ -163,13 +113,19 @@ pub fn run() -> io::Result<()> {
         mtime: cli.mtime,
     };
 
+    // `updated_atime` and `updated_mtime` describe which timestamps will be
+    // updated by each touch call. If both flags are false, we update both
+    // access and modification times.
+    let updated_atime = touch_args.atime || (!touch_args.atime && !touch_args.mtime);
+    let updated_mtime = touch_args.mtime || (!touch_args.atime && !touch_args.mtime);
+
     let parsed_date = match &cli.date {
         Some(time_str) => match rtouch::datetime::parse_time_expression(time_str) {
             Ok(t) => Some(t),
             Err(parse_err) => {
                 let error_message = format_args!("Failed to parse date expression: {parse_err}");
                 if touch_args.should_log {
-                    logmgr::access_time_failure(&error_message).unwrap_or_else(|e| {
+                    logmgr::time_modification_failure(cfg, &error_message).unwrap_or_else(|e| {
                         eprintln!("Failed to log date parsing failure: {e}");
                     });
                 }
@@ -194,7 +150,7 @@ pub fn run() -> io::Result<()> {
             Ok(repl_res) => match repl_res {
                 ReplResult::Aborted => {
                     if touch_args.should_log {
-                        logmgr::success_log(&format_args!(
+                        logmgr::success_log(cfg, &format_args!(
                             "Aborted a replacement of a directory in a file."
                         ))
                         .unwrap_or_else(|e| {
@@ -205,24 +161,39 @@ pub fn run() -> io::Result<()> {
                 }
                 ReplResult::Completed => {
                     if touch_args.should_log {
-                        logmgr::success_log(&format_args!(
+                        logmgr::success_log(cfg, &format_args!(
                             "Replaced directory with file: {}",
                             path.display()
                         ))
                         .unwrap_or_else(|e| {
                             eprintln!("Failed to log completion for {}: {e}", path.display());
                         });
+
                         if parsed_date.is_some() || touch_args.atime || touch_args.mtime {
-                            logmgr::access_time_success(&format_args!(
-                                "Successfully updated timestamp for {}",
-                                path.display()
-                            ))
-                            .unwrap_or_else(|e| {
-                                eprintln!(
-                                    "Failed to log timestamp success for {}: {e}",
+                            if updated_atime {
+                                logmgr::atime_modification_success(cfg, &format_args!(
+                                    "Successfully updated access time for {}",
                                     path.display()
-                                );
-                            });
+                                ))
+                                .unwrap_or_else(|e| {
+                                    eprintln!(
+                                        "Failed to log atime success for {}: {e}",
+                                        path.display()
+                                    );
+                                });
+                            }
+                            if updated_mtime {
+                                logmgr::mtime_modification_success(cfg, &format_args!(
+                                    "Successfully updated modification time for {}",
+                                    path.display()
+                                ))
+                                .unwrap_or_else(|e| {
+                                    eprintln!(
+                                        "Failed to log mtime success for {}: {e}",
+                                        path.display()
+                                    );
+                                });
+                            }
                         }
                     }
                 }
@@ -233,20 +204,35 @@ pub fn run() -> io::Result<()> {
                         } else {
                             format_args!("File Created: {}", path.display())
                         };
-                        logmgr::success_log(&message).unwrap_or_else(|e| {
+                        logmgr::success_log(cfg, &message).unwrap_or_else(|e| {
                             eprintln!("Failed to log creation for {}: {e}", path.display());
                         });
+
                         if parsed_date.is_some() || touch_args.atime || touch_args.mtime {
-                            logmgr::access_time_success(&format_args!(
-                                "Successfully updated timestamp for {}",
-                                path.display()
-                            ))
-                            .unwrap_or_else(|e| {
-                                eprintln!(
-                                    "Failed to log timestamp success for {}: {e}",
+                            if updated_atime {
+                                logmgr::atime_modification_success(cfg, &format_args!(
+                                    "Successfully updated access time for {}",
                                     path.display()
-                                );
-                            });
+                                ))
+                                .unwrap_or_else(|e| {
+                                    eprintln!(
+                                        "Failed to log atime success for {}: {e}",
+                                        path.display()
+                                    );
+                                });
+                            }
+                            if updated_mtime {
+                                logmgr::mtime_modification_success(cfg, &format_args!(
+                                    "Successfully updated modification time for {}",
+                                    path.display()
+                                ))
+                                .unwrap_or_else(|e| {
+                                    eprintln!(
+                                        "Failed to log mtime success for {}: {e}",
+                                        path.display()
+                                    );
+                                });
+                            }
                         }
                     }
                 }
@@ -272,12 +258,12 @@ pub fn run() -> io::Result<()> {
 
                 if touch_args.should_log {
                     let log_res = if error.kind() == ErrorKind::IsADirectory {
-                        logmgr::error_log(&format_args!(
+                        logmgr::error_log(cfg, &format_args!(
                             "Attempted to touch directory: {}",
                             path.display()
                         ))
                     } else {
-                        logmgr::error_log(&format_args!("Unexpected Error : {error}"))
+                        logmgr::error_log(cfg, &format_args!("Unexpected Error : {error}"))
                     };
 
                     log_res.unwrap_or_else(|e| {
