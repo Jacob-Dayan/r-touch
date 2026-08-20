@@ -19,14 +19,6 @@ pub mod replace_dir;
 
 pub use replace_dir::ReplResult;
 
-/// Shortcut for `std::io::Error::new(std::io::ErrorKind::Other, e)`
-#[macro_export]
-macro_rules! new_io_error {
-    ($e:expr) => {
-        std::io::Error::new(std::io::ErrorKind::Other, $e)
-    };
-}
-
 /// Core file creation and timestamp management logic.
 ///
 /// If `create_parents` is true, parent directories are created if they do not exist.
