@@ -2,6 +2,23 @@
 
 The drop-in replacement that has its own date time parser as a library in [crates.io](https://crates.io/crates/rtouch), independently logs successes, failures, and time-modifications that we all've been waiting for, because it's well known that [`touch`](https://www.gnu.org/software/coreutils/touch) is the only tool separating us from world peace, and ruining our workflows! who doesn't need a RIIR for the [`GNU touch`](https://www.gnu.org/software/coreutils/touch)?.
 
+## Why did I even create R-touch?
+no, no one needs a cross-platform, shortcuts mkdir -p, finishes tasks in 0.001 seconds less, that logs every action replacement for GNU touch.
+But then I thought about it:
+
+Problem:
+
+“I need to create an empty file.”
+
+Existing solution:
+```bash
+touch file.txt
+```
+Jacob Dayan (R-touch founder & developer):
+
+"Interesting. But what if we built a cross-platform Rust implementation with a custom date parser, audit logging, directory handling, multiple licensing models, benchmarking, and a reusable library?"
+
+then I started working on R-touch as a main project. Well, it was actually my first project, that's why you can see commits like "Removed Cargo.lock; unnecessary file - it's being created automatically" from the early days.
 
 Jokes aside, rtouch is a fast, modern, and slightly opinionated recreation of the classic Unix `touch` command, built from scratch in Rust.
 
