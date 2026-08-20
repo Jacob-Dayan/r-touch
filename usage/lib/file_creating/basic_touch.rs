@@ -7,7 +7,7 @@
 //! The two tests check the return value and the file's on-disk presence
 //! independently.
 
-use std::{io, path::Path};
+use std::io;
 
 fn main() -> io::Result<()> {
     rtouch_core::touch("example_basic.txt", false, None, false, false)?;
@@ -39,7 +39,7 @@ mod tests {
         let _ = std::fs::remove_file(&path);
 
         rtouch_core::touch(&path, false, None, false, false).unwrap();
-        assert!(Path::new(&path).exists());
+        assert!(std::path::Path::new(&path).exists());
 
         std::fs::remove_file(&path).unwrap();
     }

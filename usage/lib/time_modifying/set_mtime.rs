@@ -3,10 +3,7 @@
 //! [`rtouch_core::set_modification_time`] changes only the modification
 //! timestamp of an **existing** file, leaving the access time untouched.
 
-use std::{
-    io,
-    time::Duration,
-};
+use std::io;
 
 fn main() -> io::Result<()> {
     let path = std::env::temp_dir().join("rtouch_usage_mtime.txt");

@@ -4,7 +4,9 @@
 //! with [`rtouch_core::touch`] to set the access time of a file to a
 //! human-readable relative date such as `"yesterday"`.
 
-use std::{fs, io, path::Path, time::UNIX_EPOCH};
+use std::{fs, io, path::Path};
+
+use std::time::UNIX_EPOCH;
 
 /// Touches `path`, setting only its access time to `atime` (a date expression).
 fn set_access_time_of_file(path: &str, atime: &str) -> Result<rtouch_core::ReplResult, io::Error> {
@@ -44,7 +46,7 @@ fn main() -> io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::set_access_time_of_file;
-    use std::time::{Duration, SystemTime, UNIX_EPOCH};
+    use std::time::UNIX_EPOCH;
 
     /// After updating, the stored atime must match `yesterday` within 5 s.
     #[test]
