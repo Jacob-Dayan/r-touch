@@ -1,6 +1,6 @@
 //! # Logging errors and crash events
 //!
-//! [`rtouch_core::log::logmgr::error_log`] appends an entry to the error/crash
+//! [`rtouch::log::logmgr::error_log`] appends an entry to the error/crash
 //! log file located at:
 //!
 //! - **Linux/macOS**: `~/.local/share/R-touch/logs/crashes/file_creations.log`
@@ -12,9 +12,9 @@
 use std::io;
 
 fn main() -> io::Result<()> {
-    rtouch_core::log::logmgr::error_log(
-        &format_args!("example: could not create /root/protected.txt — permission denied"),
-    )?;
+    rtouch::log::logmgr::error_log(&format_args!(
+        "example: could not create /root/protected.txt — permission denied"
+    ))?;
     println!("Error entry written to crash log.");
     Ok(())
 }
@@ -24,9 +24,7 @@ mod tests {
     /// `error_log` must return `Ok(())` when the crash log directory is accessible.
     #[test]
     fn error_log_returns_ok() {
-        let result = rtouch_core::log::logmgr::error_log(
-            &format_args!("test: error_log_returns_ok"),
-        );
+        let result = rtouch::log::logmgr::error_log(&format_args!("test: error_log_returns_ok"));
         assert!(result.is_ok(), "error_log failed: {:?}", result.err());
     }
 }

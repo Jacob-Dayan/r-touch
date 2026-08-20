@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 
 use clap::Parser;
-use rtouch_core::{ReplResult, log::logmgr, new_io_error, touch};
+use rtouch::{ReplResult, log::logmgr, new_io_error, touch};
 use std::{
     borrow::Cow,
     io::{self, ErrorKind},
@@ -110,10 +110,10 @@ fn main() -> process::ExitCode {
 /// ```
 ///
 /// Next, if a `--date` / `-d` string argument was supplied in `cli.date`, we parse it using
-/// [`rtouch_core::datetime::parse_time_expression`]. If parsing fails, an error is logged (if logging is enabled),
+/// [`rtouch::datetime::parse_time_expression`]. If parsing fails, an error is logged (if logging is enabled),
 /// an error message is printed to `stderr`, and an [`io::ErrorKind::InvalidInput`] error is returned immediately.
 ///
-/// We then iterate through each normalized path in `touch_args.paths` and invoke [`rtouch_core::create`], passing:
+/// We then iterate through each normalized path in `touch_args.paths` and invoke [`rtouch::create`], passing:
 /// - `path`: The path to touch or create.
 /// - `create_parents`: Whether to create parent directories (`-p`, `--parents`).
 /// - `parsed_date`: Optional parsed target timestamp (or current time if not specified).
@@ -157,7 +157,7 @@ pub fn run() -> io::Result<()> {
     };
 
     let parsed_date = match &cli.date {
-        Some(time_str) => match rtouch_core::datetime::parse_time_expression(time_str) {
+        Some(time_str) => match rtouch::datetime::parse_time_expression(time_str) {
             Ok(t) => Some(t),
             Err(parse_err) => {
                 let error_message = format_args!("Failed to parse date expression: {parse_err}");

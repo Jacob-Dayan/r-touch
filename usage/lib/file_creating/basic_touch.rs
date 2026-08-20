@@ -1,6 +1,6 @@
 //! # Basic file creation with `touch`
 //!
-//! Demonstrates the simplest use of [`rtouch_core::touch`]:
+//! Demonstrates the simplest use of [`rtouch::touch`]:
 //! creating a new file when it does not yet exist.
 //!
 //! Running `main` creates `example_basic.txt`, then immediately removes it.
@@ -10,7 +10,7 @@
 use std::io;
 
 fn main() -> io::Result<()> {
-    rtouch_core::touch("example_basic.txt", false, None, false, false)?;
+    rtouch::touch("example_basic.txt", false, None, false, false)?;
     println!("example_basic.txt created.");
     std::fs::remove_file("example_basic.txt")?;
     Ok(())
@@ -18,7 +18,7 @@ fn main() -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use rtouch_core::ReplResult;
+    use rtouch::ReplResult;
 
     /// `touch` must succeed and signal that no directory replacement was needed.
     #[test]
@@ -26,7 +26,7 @@ mod tests {
         let path = std::env::temp_dir().join("rtouch_usage_basic_touch_1.txt");
         let _ = std::fs::remove_file(&path);
 
-        let result = rtouch_core::touch(&path, false, None, false, false).unwrap();
+        let result = rtouch::touch(&path, false, None, false, false).unwrap();
         assert!(matches!(result, ReplResult::NotRequired));
 
         std::fs::remove_file(&path).unwrap();
@@ -38,7 +38,7 @@ mod tests {
         let path = std::env::temp_dir().join("rtouch_usage_basic_touch_2.txt");
         let _ = std::fs::remove_file(&path);
 
-        rtouch_core::touch(&path, false, None, false, false).unwrap();
+        rtouch::touch(&path, false, None, false, false).unwrap();
         assert!(std::path::Path::new(&path).exists());
 
         std::fs::remove_file(&path).unwrap();
