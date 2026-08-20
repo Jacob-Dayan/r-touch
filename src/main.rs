@@ -46,7 +46,7 @@ pub struct Cli {
     pub mtime: bool,
 
     /// Parse date string expression and use it instead of current time.
-    #[arg(short = 'd', long = "date")]
+    #[arg(short = 'd', long = "date", allow_hyphen_values = true)]
     pub date: Option<String>,
 
     /// Disable logging to log files.
