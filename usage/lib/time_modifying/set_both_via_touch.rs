@@ -12,7 +12,7 @@ fn main() -> io::Result<()> {
 
     let target = rtouch_core::datetime::parse_time_expression("2 days ago")
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e.to_string()))?;
-    // atime=false, mtime=false → both are updated
+    // atime=false, mtime=false — both are updated
     rtouch_core::touch(&path, false, Some(target), false, false)?;
     println!("Both timestamps set to 48 h ago: {}", path.display());
 
@@ -35,8 +35,12 @@ mod tests {
 
         let meta = std::fs::metadata(&path).unwrap();
         for got in [meta.accessed().unwrap(), meta.modified().unwrap()] {
-            let diff = if got > target { got.duration_since(target) } else { target.duration_since(got) };
-            assert!(diff.unwrap() < Duration::from_secs(2));
+            let diff = if got > target {
+                got.duration_since(target).unwrap()
+            } else {
+                target.duration_since(got).unwrap()
+            };
+            assert!(diff < Duration::from_secs(2));
         }
 
         std::fs::remove_file(&path).unwrap();
@@ -48,14 +52,18 @@ mod tests {
         let path = std::env::temp_dir().join("rtouch_usage_both_times_t2.txt");
         std::fs::write(&path, b"").unwrap();
 
-        let target = rtouch_core::datetime::parse_time_expression("1h ago").unwrap();
-        // atime=true AND mtime=true → both updated (same as both-false)
+        let target = rtouch_core::datetime::parse_time_expression("1 hour ago").unwrap();
+        // atime=true AND mtime=true — both updated (same as both-false)
         rtouch_core::touch(&path, false, Some(target), true, true).unwrap();
 
         let meta = std::fs::metadata(&path).unwrap();
         for got in [meta.accessed().unwrap(), meta.modified().unwrap()] {
-            let diff = if got > target { got.duration_since(target) } else { target.duration_since(got) };
-            assert!(diff.unwrap() < Duration::from_secs(2));
+            let diff = if got > target {
+                got.duration_since(target).unwrap()
+            } else {
+                target.duration_since(got).unwrap()
+            };
+            assert!(diff < Duration::from_secs(2));
         }
 
         std::fs::remove_file(&path).unwrap();
