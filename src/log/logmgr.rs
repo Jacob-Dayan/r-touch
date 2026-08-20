@@ -15,7 +15,9 @@ fn write_log(path: &std::path::Path, message: &fmt::Arguments) -> io::Result<()>
     LogCore::new(path.to_path_buf()).log(message).map_err(|e| {
         std::io::Error::new(
             std::io::ErrorKind::Other,
-            format!("Cannot write log to {}: {e}", path.display()),
+            format_args!("Cannot write log to {}: {e}", path.display())
+                .as_str()
+                .unwrap(),
         )
     })
 }
@@ -57,7 +59,10 @@ pub fn mtime_modification_success(
 /// Appends an entry describing a failure related to time modification (parsing
 /// or update failures). Errors are still written under the `crashes/` log in
 /// the configured `error_log` path.
-pub fn time_modification_failure(cfg: &crate::LogConfig, message: &fmt::Arguments) -> io::Result<()> {
+pub fn time_modification_failure(
+    cfg: &crate::LogConfig,
+    message: &fmt::Arguments,
+) -> io::Result<()> {
     // Keep failures under the configured `error_log` (crashes/...) to preserve
     // the previous behaviour of writing errors to the crash logs.
     write_log(&cfg.error_log, message)

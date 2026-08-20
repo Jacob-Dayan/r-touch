@@ -25,7 +25,7 @@ use std::{
 #[derive(Parser, Debug)]
 #[command(
     name = "R-touch",
-    version = "1.4.2, Pre-release",
+    version = "1.5.0, latest until 25'th of August, 2026",
     about = "A custom touch implementation, written in Rust"
 )]
 pub struct Cli {
@@ -66,9 +66,8 @@ struct TouchArgs<'a> {
 // Default LogConfig for the binary. Using a LazyLock ensures the default
 // paths are computed once at startup and can be referenced throughout the
 // process lifetime.
-static DEFAULT_LOG_CONFIG: LazyLock<rtouch::LogConfig> = LazyLock::new(|| {
-    rtouch::LogConfig::from_env_defaults()
-});
+static DEFAULT_LOG_CONFIG: LazyLock<rtouch::LogConfig> =
+    LazyLock::new(|| rtouch::LogConfig::from_env_defaults());
 
 /// Matches the [`run`] function and returns the appropriate exit code.
 fn main() -> process::ExitCode {
@@ -150,9 +149,10 @@ pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
             Ok(repl_res) => match repl_res {
                 ReplResult::Aborted => {
                     if touch_args.should_log {
-                        logmgr::success_log(cfg, &format_args!(
-                            "Aborted a replacement of a directory in a file."
-                        ))
+                        logmgr::success_log(
+                            cfg,
+                            &format_args!("Aborted a replacement of a directory in a file."),
+                        )
                         .unwrap_or_else(|e| {
                             eprintln!("Failed to log abort status for {}: {e}", path.display());
                         });
@@ -161,20 +161,23 @@ pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
                 }
                 ReplResult::Completed => {
                     if touch_args.should_log {
-                        logmgr::success_log(cfg, &format_args!(
-                            "Replaced directory with file: {}",
-                            path.display()
-                        ))
+                        logmgr::success_log(
+                            cfg,
+                            &format_args!("Replaced directory with file: {}", path.display()),
+                        )
                         .unwrap_or_else(|e| {
                             eprintln!("Failed to log completion for {}: {e}", path.display());
                         });
 
                         if parsed_date.is_some() || touch_args.atime || touch_args.mtime {
                             if updated_atime {
-                                logmgr::atime_modification_success(cfg, &format_args!(
-                                    "Successfully updated access time for {}",
-                                    path.display()
-                                ))
+                                logmgr::atime_modification_success(
+                                    cfg,
+                                    &format_args!(
+                                        "Successfully updated access time for {}",
+                                        path.display()
+                                    ),
+                                )
                                 .unwrap_or_else(|e| {
                                     eprintln!(
                                         "Failed to log atime success for {}: {e}",
@@ -183,10 +186,13 @@ pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
                                 });
                             }
                             if updated_mtime {
-                                logmgr::mtime_modification_success(cfg, &format_args!(
-                                    "Successfully updated modification time for {}",
-                                    path.display()
-                                ))
+                                logmgr::mtime_modification_success(
+                                    cfg,
+                                    &format_args!(
+                                        "Successfully updated modification time for {}",
+                                        path.display()
+                                    ),
+                                )
                                 .unwrap_or_else(|e| {
                                     eprintln!(
                                         "Failed to log mtime success for {}: {e}",
@@ -210,10 +216,13 @@ pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
 
                         if parsed_date.is_some() || touch_args.atime || touch_args.mtime {
                             if updated_atime {
-                                logmgr::atime_modification_success(cfg, &format_args!(
-                                    "Successfully updated access time for {}",
-                                    path.display()
-                                ))
+                                logmgr::atime_modification_success(
+                                    cfg,
+                                    &format_args!(
+                                        "Successfully updated access time for {}",
+                                        path.display()
+                                    ),
+                                )
                                 .unwrap_or_else(|e| {
                                     eprintln!(
                                         "Failed to log atime success for {}: {e}",
@@ -222,10 +231,13 @@ pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
                                 });
                             }
                             if updated_mtime {
-                                logmgr::mtime_modification_success(cfg, &format_args!(
-                                    "Successfully updated modification time for {}",
-                                    path.display()
-                                ))
+                                logmgr::mtime_modification_success(
+                                    cfg,
+                                    &format_args!(
+                                        "Successfully updated modification time for {}",
+                                        path.display()
+                                    ),
+                                )
                                 .unwrap_or_else(|e| {
                                     eprintln!(
                                         "Failed to log mtime success for {}: {e}",
@@ -258,10 +270,10 @@ pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
 
                 if touch_args.should_log {
                     let log_res = if error.kind() == ErrorKind::IsADirectory {
-                        logmgr::error_log(cfg, &format_args!(
-                            "Attempted to touch directory: {}",
-                            path.display()
-                        ))
+                        logmgr::error_log(
+                            cfg,
+                            &format_args!("Attempted to touch directory: {}", path.display()),
+                        )
                     } else {
                         logmgr::error_log(cfg, &format_args!("Unexpected Error : {error}"))
                     };
