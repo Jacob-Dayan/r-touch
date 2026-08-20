@@ -28,5 +28,5 @@ name = "rtouch"
 path = "src/main.rs"
 
 [lib]
-name = "rtouch_core"
+name = "rtouch"
 path = "src/lib.rs"

@@ -27,7 +27,7 @@ use std::{
 /// ```no_run
 /// use std::sync::LazyLock;
 /// use std::path::PathBuf;
-/// use rtouch_core::log::log_core::LogCore;
+/// use rtouch::log::log_core::LogCore;
 ///
 /// static LOGGER: LazyLock<LogCore> = LazyLock::new(|| {
 ///     LogCore::new(PathBuf::from("/var/log/myapp/app.log"))

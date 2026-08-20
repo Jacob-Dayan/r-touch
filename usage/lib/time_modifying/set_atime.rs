@@ -1,6 +1,6 @@
 //! # Update only the access time (`atime`)
 //!
-//! [`rtouch_core::set_access_time`] is the focused API for changing only
+//! [`rtouch::set_access_time`] is the focused API for changing only
 //! the access timestamp of an **existing** file without touching its
 //! modification time.
 
@@ -11,9 +11,9 @@ fn main() -> io::Result<()> {
     let path = std::env::temp_dir().join("rtouch_usage_atime.txt");
     std::fs::write(&path, b"")?;
 
-    let one_hour_ago = rtouch_core::datetime::parse_time_expression("1 hour ago")
+    let one_hour_ago = rtouch::datetime::parse_time_expression("1 hour ago")
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e.to_string()))?;
-    rtouch_core::set_access_time(&path, one_hour_ago)?;
+    rtouch::set_access_time(&path, one_hour_ago)?;
     println!("Access time set to one hour ago: {}", path.display());
 
     std::fs::remove_file(&path)?;
@@ -31,8 +31,8 @@ mod tests {
         let path = std::env::temp_dir().join("rtouch_usage_set_atime.txt");
         std::fs::write(&path, b"").unwrap();
 
-        let target = rtouch_core::datetime::parse_time_expression("2 hours ago").unwrap();
-        rtouch_core::set_access_time(&path, target).unwrap();
+        let target = rtouch::datetime::parse_time_expression("2 hours ago").unwrap();
+        rtouch::set_access_time(&path, target).unwrap();
 
         let got = std::fs::metadata(&path).unwrap().accessed().unwrap();
         let diff = if got > target {

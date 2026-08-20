@@ -1,11 +1,11 @@
 //! # Simply creating a file (original example)
 //!
-//! The simplest possible invocation of [`rtouch_core::touch`]:
+//! The simplest possible invocation of [`rtouch::touch`]:
 //! create `foo.txt` in the current directory and immediately clean up.
 
 macro_rules! foo {
     () => {
-        rtouch_core::touch("foo.txt", false, None, false, false)
+        rtouch::touch("foo.txt", false, None, false, false)
     };
 }
 

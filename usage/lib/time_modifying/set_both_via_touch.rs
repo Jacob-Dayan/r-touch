@@ -1,6 +1,6 @@
 //! # Set both `atime` and `mtime` through `touch`
 //!
-//! When both `atime` and `mtime` are `false` (the defaults), [`rtouch_core::touch`]
+//! When both `atime` and `mtime` are `false` (the defaults), [`rtouch::touch`]
 //! updates **both** timestamps to the supplied time — or to `SystemTime::now()`
 //! when no explicit time is given.
 
@@ -10,10 +10,10 @@ fn main() -> io::Result<()> {
     let path = std::env::temp_dir().join("rtouch_usage_both_times.txt");
     std::fs::write(&path, b"")?;
 
-    let target = rtouch_core::datetime::parse_time_expression("2 days ago")
+    let target = rtouch::datetime::parse_time_expression("2 days ago")
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e.to_string()))?;
     // atime=false, mtime=false — both are updated
-    rtouch_core::touch(&path, false, Some(target), false, false)?;
+    rtouch::touch(&path, false, Some(target), false, false)?;
     println!("Both timestamps set to 48 h ago: {}", path.display());
 
     std::fs::remove_file(&path)?;
@@ -30,8 +30,8 @@ mod tests {
         let path = std::env::temp_dir().join("rtouch_usage_both_times_t1.txt");
         std::fs::write(&path, b"").unwrap();
 
-        let target = rtouch_core::datetime::parse_time_expression("2 days ago").unwrap();
-        rtouch_core::touch(&path, false, Some(target), false, false).unwrap();
+        let target = rtouch::datetime::parse_time_expression("2 days ago").unwrap();
+        rtouch::touch(&path, false, Some(target), false, false).unwrap();
 
         let meta = std::fs::metadata(&path).unwrap();
         for got in [meta.accessed().unwrap(), meta.modified().unwrap()] {
@@ -52,9 +52,9 @@ mod tests {
         let path = std::env::temp_dir().join("rtouch_usage_both_times_t2.txt");
         std::fs::write(&path, b"").unwrap();
 
-        let target = rtouch_core::datetime::parse_time_expression("1 hour ago").unwrap();
+        let target = rtouch::datetime::parse_time_expression("1 hour ago").unwrap();
         // atime=true AND mtime=true — both updated (same as both-false)
-        rtouch_core::touch(&path, false, Some(target), true, true).unwrap();
+        rtouch::touch(&path, false, Some(target), true, true).unwrap();
 
         let meta = std::fs::metadata(&path).unwrap();
         for got in [meta.accessed().unwrap(), meta.modified().unwrap()] {

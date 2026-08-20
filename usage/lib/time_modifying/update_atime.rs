@@ -1,7 +1,7 @@
 //! # Update the access time (`atime`) to a relative date expression
 //!
-//! Demonstrates combining [`rtouch_core::datetime::parse_time_expression`]
-//! with [`rtouch_core::touch`] to set the access time of a file to a
+//! Demonstrates combining [`rtouch::datetime::parse_time_expression`]
+//! with [`rtouch::touch`] to set the access time of a file to a
 //! human-readable relative date such as `"yesterday"`.
 
 use std::{fs, io, path::Path};
@@ -9,10 +9,10 @@ use std::{fs, io, path::Path};
 use std::time::UNIX_EPOCH;
 
 /// Touches `path`, setting only its access time to `atime` (a date expression).
-fn set_access_time_of_file(path: &str, atime: &str) -> Result<rtouch_core::ReplResult, io::Error> {
-    let time = rtouch_core::datetime::parse_time_expression(atime)
+fn set_access_time_of_file(path: &str, atime: &str) -> Result<rtouch::ReplResult, io::Error> {
+    let time = rtouch::datetime::parse_time_expression(atime)
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e.to_string()))?;
-    rtouch_core::touch(
+    rtouch::touch(
         path,
         false, // don't create parent directories
         Some(time),
@@ -30,7 +30,7 @@ fn main() -> io::Result<()> {
     set_access_time_of_file("foo.txt", "yesterday")?;
 
     let file_access_time = fs::metadata("foo.txt")?.accessed()?;
-    let expected_time = rtouch_core::datetime::parse_time_expression("yesterday").unwrap();
+    let expected_time = rtouch::datetime::parse_time_expression("yesterday").unwrap();
 
     let file_secs = file_access_time
         .duration_since(UNIX_EPOCH)
@@ -64,7 +64,7 @@ mod tests {
             .unwrap()
             .as_secs();
 
-        let expected_secs = rtouch_core::datetime::parse_time_expression("yesterday")
+        let expected_secs = rtouch::datetime::parse_time_expression("yesterday")
             .unwrap()
             .duration_since(UNIX_EPOCH)
             .unwrap()
