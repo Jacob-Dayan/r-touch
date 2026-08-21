@@ -8,7 +8,9 @@ But then I thought about it:
 
 Problem:
 
+```text
 “I need to create an empty file.”
+```
 
 Existing solution:
 ```bash
