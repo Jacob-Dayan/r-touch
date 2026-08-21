@@ -63,11 +63,14 @@ struct TouchArgs<'a> {
     mtime: bool,
 }
 
+const APP_NAME: &str = "R-touch";
+
 // Default LogConfig for the binary. Using a LazyLock ensures the default
 // paths are computed once at startup and can be referenced throughout the
-// process lifetime.
+// process lifetime. The app-specific directory name is kept here so the library
+// remains reusable for other crates and applications.
 static DEFAULT_LOG_CONFIG: LazyLock<rtouch::LogConfig> =
-    LazyLock::new(|| rtouch::LogConfig::from_env_defaults());
+    LazyLock::new(|| rtouch::LogConfig::from_env_defaults_for(APP_NAME));
 
 /// Matches the [`run`] function and returns the appropriate exit code.
 fn main() -> process::ExitCode {
