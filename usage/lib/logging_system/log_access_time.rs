@@ -13,7 +13,7 @@
 use std::io;
 
 fn main() -> io::Result<()> {
-    let cfg = rtouch::LogConfig::from_env_defaults();
+    let cfg = rtouch::LogConfig::from_env_defaults_for("R-touch");
 
     rtouch::log::logmgr::atime_modification_success(&cfg, &format_args!(
         "example: atime updated to yesterday for report.pdf"
@@ -32,7 +32,7 @@ mod tests {
     /// `atime_modification_success` must write without error.
     #[test]
     fn access_time_success_returns_ok() {
-        let cfg = rtouch::LogConfig::from_env_defaults();
+        let cfg = rtouch::LogConfig::from_env_defaults_for("R-touch");
         let result = rtouch::log::logmgr::atime_modification_success(&cfg, &format_args!(
             "test: access_time_success_returns_ok"
         ));
@@ -46,7 +46,7 @@ mod tests {
     /// `time_modification_failure` must write without error.
     #[test]
     fn access_time_failure_returns_ok() {
-        let cfg = rtouch::LogConfig::from_env_defaults();
+        let cfg = rtouch::LogConfig::from_env_defaults_for("R-touch");
         let result = rtouch::log::logmgr::time_modification_failure(&cfg, &format_args!(
             "test: access_time_failure_returns_ok"
         ));

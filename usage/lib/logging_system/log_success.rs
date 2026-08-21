@@ -13,7 +13,7 @@
 use std::io;
 
 fn main() -> io::Result<()> {
-    let cfg = rtouch::LogConfig::from_env_defaults();
+    let cfg = rtouch::LogConfig::from_env_defaults_for("R-touch");
     rtouch::log::logmgr::success_log(&cfg, &format_args!("example: file created successfully"))?;
     println!("Success entry written to log.");
     Ok(())
@@ -24,7 +24,7 @@ mod tests {
     /// `success_log` must return `Ok(())` when the log directory is accessible.
     #[test]
     fn success_log_returns_ok() {
-        let cfg = rtouch::LogConfig::from_env_defaults();
+        let cfg = rtouch::LogConfig::from_env_defaults_for("R-touch");
         let result = rtouch::log::logmgr::success_log(&cfg, &format_args!("test: success_log_returns_ok"));
         assert!(result.is_ok(), "success_log failed: {:?}", result.err());
     }

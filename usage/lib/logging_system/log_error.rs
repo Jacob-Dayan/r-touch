@@ -12,7 +12,7 @@
 use std::io;
 
 fn main() -> io::Result<()> {
-    let cfg = rtouch::LogConfig::from_env_defaults();
+    let cfg = rtouch::LogConfig::from_env_defaults_for("R-touch");
     rtouch::log::logmgr::error_log(&cfg, &format_args!(
         "example: could not create /root/protected.txt — permission denied"
     ))?;
@@ -25,7 +25,7 @@ mod tests {
     /// `error_log` must return `Ok(())` when the crash log directory is accessible.
     #[test]
     fn error_log_returns_ok() {
-        let cfg = rtouch::LogConfig::from_env_defaults();
+        let cfg = rtouch::LogConfig::from_env_defaults_for("R-touch");
         let result = rtouch::log::logmgr::error_log(&cfg, &format_args!("test: error_log_returns_ok"));
         assert!(result.is_ok(), "error_log failed: {:?}", result.err());
     }
