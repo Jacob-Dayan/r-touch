@@ -16,8 +16,6 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn create_foo() {
         foo!("foo_create.txt").unwrap();

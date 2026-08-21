@@ -15,8 +15,6 @@ fn main() -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-
     /// Both the file and its intermediate parent directories must exist.
     #[test]
     fn creates_parents_and_file() {
