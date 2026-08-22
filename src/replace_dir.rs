@@ -70,17 +70,44 @@ impl Action {
 /// Returns an [`std::io::Error`] if the directory cannot be removed or the
 /// replacement file cannot be created.
 pub fn replace<P: AsRef<Path>>(path: P) -> io::Result<ReplResult> {
-    let path_ref = path.as_ref();
-    let action = Action::new(path_ref);
+    replace_with_force(path, false)
+}
 
-    match action {
+/// Attempts to replace the directory at `path` with an empty file.
+///
+/// Empty directories are replaced immediately. Non-empty directories only prompt
+/// when `force` is false; if `force` is true, the directory is deleted without
+/// prompting.
+pub fn replace_with_force<P: AsRef<Path>>(path: P, force: bool) -> io::Result<ReplResult> {
+    let path_ref = path.as_ref();
+    if !path_ref.is_dir() {
+        return Ok(ReplResult::NotRequired);
+    }
+
+    let is_empty = fs::read_dir(path_ref)
+        .map(|mut dir| dir.next().is_none())
+        .unwrap_or(false);
+
+    if is_empty {
+        fs::remove_dir(path_ref)?;
+        File::create(path_ref)?;
+        return Ok(ReplResult::Completed);
+    }
+
+    if force {
+        fs::remove_dir_all(path_ref)?;
+        File::create(path_ref)?;
+        return Ok(ReplResult::Completed);
+    }
+
+    match Action::new(path_ref) {
         Action::Accept => {
             fs::remove_dir_all(path_ref)?;
             File::create(path_ref)?;
             Ok(ReplResult::Completed)
         }
         Action::Abort => {
-            println!("Abort");
+            eprintln!("Abort");
             Ok(ReplResult::Aborted)
         }
     }
