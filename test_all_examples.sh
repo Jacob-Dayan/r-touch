@@ -25,10 +25,9 @@ cleanup() {
 }
 trap cleanup EXIT
 
-debug "finished setup"
-
 TEST_PROJECT_DIR="${BASE_TMP_DIR}/test_runner"
 cargo new --bin "${TEST_PROJECT_DIR}" --quiet
+debug "finished setup"
 cd "${TEST_PROJECT_DIR}"
 
 debug "adding rtouch to dependencies"
@@ -47,6 +46,19 @@ find "${USAGE_DIR}" -type f -name "*.rs" | while read -r file_path; do
 
     echo "Running cargo test..."
     cargo test
+
+    echo -e "Test for ${filename} passed successfully!\n"
+done
+
+find "${PROJECT_ROOT}/usage/cli" -type f -name "*.sh" | while read -r file_path; do
+    filename=$(basename "${file_path}")
+
+    echo "=========================================="
+    echo "Testing CLI: ${file_path}"
+    echo "=========================================="
+
+    chmod +x "${file_path}"
+    bash "${file_path}"
 
     echo -e "Test for ${filename} passed successfully!\n"
 done
