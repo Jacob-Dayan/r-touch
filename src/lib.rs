@@ -8,6 +8,8 @@
 // one of these licenses.
 
 use fs_err::{self as fs, File, OpenOptions};
+#[cfg(target_os = "windows")]
+use fs_err::os::windows::fs::OpenOptionsExt;
 use std::{fs::FileTimes, io, path::Path, time::SystemTime};
 
 /// Configuration for log file paths used by the library logging subsystem.
@@ -97,8 +99,9 @@ pub use replace_dir::ReplResult;
 /// Core file creation and timestamp management logic.
 ///
 /// If `create_parents` is true, parent directories are created if they do not exist.
-/// If `path` is an existing directory, it replaces the directory with an empty file.
-/// If `path` does not exist, a new empty file is created.
+/// Existing directories are treated as valid touch targets and receive timestamp
+/// updates by default; directory replacement only happens through explicit
+/// replacement logic in the CLI layer.
 ///
 /// When updating timestamps:
 /// - `time` is the timestamp to apply (if `None`, `SystemTime::now()` is used).
@@ -129,19 +132,24 @@ pub fn touch<P: AsRef<Path>>(
     };
 
     if path_ref.is_dir() {
-        let res = replace_dir::replace(path_ref)?;
-        if let ReplResult::Completed = res {
-            let file = OpenOptions::new().write(true).open(path_ref)?;
-            let mut times = FileTimes::new();
-            if set_atime {
-                times = times.set_accessed(target_time);
-            }
-            if set_mtime {
-                times = times.set_modified(target_time);
-            }
-            file.set_times(times)?;
+        #[cfg(target_os = "windows")]
+        let file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .custom_flags(0x0200_0000)
+            .open(path_ref)?;
+        #[cfg(not(target_os = "windows"))]
+        let file = OpenOptions::new().read(true).write(true).open(path_ref)?;
+
+        let mut times = FileTimes::new();
+        if set_atime {
+            times = times.set_accessed(target_time);
         }
-        return Ok(res);
+        if set_mtime {
+            times = times.set_modified(target_time);
+        }
+        file.set_times(times)?;
+        return Ok(ReplResult::NotRequired);
     }
 
     if !path_ref.exists() {
@@ -382,6 +390,30 @@ mod tests {
             before_touch.duration_since(mtime).unwrap()
         };
         assert!(mtime_diff < Duration::from_secs(5));
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_touch_directory_updates_metadata_without_replacing() {
+        let temp_dir = std::env::temp_dir().join("rtouch_dir_metadata_test");
+        let _ = fs::remove_dir_all(&temp_dir);
+        fs::create_dir_all(&temp_dir).unwrap();
+        fs::write(temp_dir.join("nested.txt"), "hello").unwrap();
+
+        let target_time = SystemTime::UNIX_EPOCH + Duration::from_secs(1_700_000_000);
+        let res = touch(&temp_dir, false, Some(target_time), true, false).unwrap();
+        assert!(matches!(res, ReplResult::NotRequired));
+
+        let metadata = fs::metadata(&temp_dir).unwrap();
+        let atime = metadata.accessed().unwrap();
+        let diff = if atime > target_time {
+            atime.duration_since(target_time).unwrap()
+        } else {
+            target_time.duration_since(atime).unwrap()
+        };
+        assert!(diff < Duration::from_secs(2));
+        assert!(temp_dir.is_dir());
 
         let _ = fs::remove_dir_all(&temp_dir);
     }

@@ -12,9 +12,10 @@
 // GNU General Public License for more details.
 
 use clap::Parser;
-use rtouch::{ReplResult, log::logmgr, touch};
+use rtouch::{ReplResult, log::logmgr, replace_dir, touch};
 use std::{
     borrow::Cow,
+    ffi::OsString,
     io::{self, ErrorKind},
     path::{Path, PathBuf},
     process,
@@ -37,6 +38,14 @@ pub struct Cli {
     #[arg(short, long)]
     pub parents: bool,
 
+    /// Replace an existing directory with an empty file.
+    #[arg(short = 'r', long = "replace-directory")]
+    pub replace_directory: bool,
+
+    /// Force deletion of a non-empty directory when replacing it.
+    #[arg(short = 'f', long = "force")]
+    pub force: bool,
+
     /// Change only the access time.
     #[arg(short = 'a', long = "atime", alias = "access-time")]
     pub atime: bool,
@@ -58,6 +67,8 @@ pub struct Cli {
 struct TouchArgs<'a> {
     paths: Vec<Cow<'a, Path>>,
     create_parents: bool,
+    replace_directory: bool,
+    force: bool,
     should_log: bool,
     atime: bool,
     mtime: bool,
@@ -87,11 +98,24 @@ macro_rules! new_io_error {
     };
 }
 
+fn normalize_cli_args(args: impl IntoIterator<Item = OsString>) -> Vec<OsString> {
+    args.into_iter()
+        .map(|arg| {
+            let arg_str = arg.to_string_lossy();
+            if arg_str == "-rd" {
+                OsString::from("--replace-directory")
+            } else {
+                arg
+            }
+        })
+        .collect()
+}
+
 /// Runs the rtouch operations for all specified paths.
 ///
 /// Parses the CLI arguments and processes each path.
 pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
-    let cli = Cli::parse();
+    let cli = Cli::parse_from(normalize_cli_args(std::env::args_os()));
 
     let mut has_failed = false;
 
@@ -110,6 +134,8 @@ pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
     let touch_args = TouchArgs {
         paths,
         create_parents: cli.parents,
+        replace_directory: cli.replace_directory,
+        force: cli.force,
         should_log: cli.should_log,
         atime: cli.atime,
         mtime: cli.mtime,
@@ -142,13 +168,19 @@ pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
     };
 
     for path in &touch_args.paths {
-        match touch(
-            path,
-            touch_args.create_parents,
-            parsed_date,
-            touch_args.atime,
-            touch_args.mtime,
-        ) {
+        let result = if path.is_dir() && touch_args.replace_directory {
+            replace_dir::replace_with_force(path, touch_args.force)
+        } else {
+            touch(
+                path,
+                touch_args.create_parents,
+                parsed_date,
+                touch_args.atime,
+                touch_args.mtime,
+            )
+        };
+
+        match result {
             Ok(repl_res) => match repl_res {
                 ReplResult::Aborted => {
                     if touch_args.should_log {
@@ -308,9 +340,35 @@ mod tests {
         assert_eq!(cli.paths, vec!["file.txt"]);
         assert_eq!(cli.date, None);
         assert!(!cli.parents);
+        assert!(!cli.replace_directory);
+        assert!(!cli.force);
         assert!(!cli.atime);
         assert!(!cli.mtime);
         assert!(cli.should_log);
+    }
+
+    #[test]
+    fn test_cli_parsing_replace_directory_flag() {
+        let cli = Cli::parse_from(normalize_cli_args([
+            OsString::from("rtouch"),
+            OsString::from("-rd"),
+            OsString::from("dir"),
+        ]));
+        assert_eq!(cli.paths, vec!["dir"]);
+        assert!(cli.replace_directory);
+
+        let cli2 = Cli::try_parse_from(["rtouch", "-r", "dir"]).unwrap();
+        assert!(cli2.replace_directory);
+
+        let cli3 = Cli::try_parse_from(["rtouch", "--replace-directory", "dir"]).unwrap();
+        assert!(cli3.replace_directory);
+    }
+
+    #[test]
+    fn test_cli_parsing_force_flag() {
+        let cli = Cli::try_parse_from(["rtouch", "-f", "dir"]).unwrap();
+        assert!(cli.force);
+        assert!(!cli.replace_directory);
     }
 
     #[test]
