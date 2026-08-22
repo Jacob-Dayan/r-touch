@@ -32,7 +32,7 @@ In r-touch, since version 1.5.1, we have:
 ```bash
 rtouch -rd -f sample # Running with -rd is the same is running with --replace-directory 
 ```
-> The -f flag is to skip asking whether should replace all the files in the directory if it's not empty, but for general uses - you might wanna avoid the -f flag 
+> The -f flag is to skip asking whether should replace all the files in the directory if it's not empty, but for general uses - you might wanna avoid the -f (or --force) flag. 
 
 > **Note:** R-touch automatically replaces the `/` with a `\` character on windows workplaces, with zero-cost of overhead and performance.
 
