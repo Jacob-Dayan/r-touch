@@ -52,6 +52,10 @@ pub fn parse_time_expression(input: &str) -> Result<SystemTime, TimeParseError> 
     let lower = trimmed.to_ascii_lowercase();
     let now = Local::now();
 
+    if let Ok(st) = parse_standard_formats(trimmed) {
+        return Ok(st);
+    }
+
     if let Ok(dt) = parse_exact_keywords(&lower, &now) {
         return system_time_from_local_dt(dt);
     }
@@ -64,13 +68,8 @@ pub fn parse_time_expression(input: &str) -> Result<SystemTime, TimeParseError> 
         return system_time_from_local_dt(dt);
     }
 
-    if let Some(rest) = lower.strip_prefix("today ") {
-        let dt = parse_today_time(rest.trim(), &now)?;
-        return system_time_from_local_dt(dt);
-    }
-
-    if let Ok(st) = parse_standard_formats(trimmed) {
-        return Ok(st);
+    if let Some(ndt) = parse_relative_with_time(&lower, &now)? {
+        return system_time_from_naive(ndt);
     }
 
     if let Ok(ndt) = parse_gnu_touch_time(trimmed, now.year()) {
@@ -103,7 +102,7 @@ fn parse_exact_keywords(
     now: &chrono::DateTime<Local>,
 ) -> Result<chrono::DateTime<Local>, TimeParseError> {
     match lower {
-        "now" => Ok(*now),
+        "now" | "today" => Ok(*now),
         "yesterday" => now
             .checked_sub_signed(chrono::Duration::days(1))
             .ok_or_else(|| TimeParseError::InvalidValue("Date underflow".to_string())),
@@ -335,10 +334,64 @@ fn parse_relative_last(
     )))
 }
 
-fn parse_today_time(
-    time_str: &str,
+fn parse_relative_date_base(
+    lower: &str,
     now: &chrono::DateTime<Local>,
 ) -> Result<chrono::DateTime<Local>, TimeParseError> {
+    if let Ok(dt) = parse_exact_keywords(lower, now) {
+        return Ok(dt);
+    }
+    if let Ok(dt) = parse_relative_offset(lower, now) {
+        return Ok(dt);
+    }
+    if let Ok(dt) = parse_relative_next_last(lower, now) {
+        return Ok(dt);
+    }
+    Err(TimeParseError::UnsupportedExpression("".to_string()))
+}
+
+fn parse_relative_with_time(
+    lower: &str,
+    now: &chrono::DateTime<Local>,
+) -> Result<Option<NaiveDateTime>, TimeParseError> {
+    let tokens: Vec<&str> = lower.split_whitespace().collect();
+    if tokens.len() < 2 {
+        return Ok(None);
+    }
+
+    let time_str = tokens[tokens.len() - 1];
+    if !time_str.contains(':') {
+        return Ok(None);
+    }
+
+    let date_tokens = if tokens.len() >= 3 && tokens[tokens.len() - 2] == "at" {
+        &tokens[..tokens.len() - 2]
+    } else {
+        &tokens[..tokens.len() - 1]
+    };
+
+    if date_tokens.is_empty() {
+        return Ok(None);
+    }
+
+    let date_part = date_tokens.join(" ");
+
+    if let Ok(dt) = parse_relative_date_base(&date_part, now) {
+        let naive_time = parse_time_of_day(time_str)?;
+        let ndt = NaiveDateTime::new(dt.date_naive(), naive_time);
+        return Ok(Some(ndt));
+    }
+
+    if let Ok(nd) = NaiveDate::parse_from_str(&date_part, "%Y-%m-%d") {
+        let naive_time = parse_time_of_day(time_str)?;
+        let ndt = NaiveDateTime::new(nd, naive_time);
+        return Ok(Some(ndt));
+    }
+
+    Ok(None)
+}
+
+fn parse_time_of_day(time_str: &str) -> Result<NaiveTime, TimeParseError> {
     let parts: Vec<&str> = time_str.split(':').collect();
     if parts.len() < 2 || parts.len() > 3 {
         return Err(TimeParseError::InvalidFormat(format!(
@@ -349,28 +402,32 @@ fn parse_today_time(
     let hour = parts[0]
         .parse::<u32>()
         .map_err(|_| TimeParseError::InvalidValue(format!("Invalid hour: {}", parts[0])))?;
+    if hour > 23 {
+        return Err(TimeParseError::InvalidValue(format!("Invalid hour: {hour}")));
+    }
+
     let min = parts[1]
         .parse::<u32>()
         .map_err(|_| TimeParseError::InvalidValue(format!("Invalid minute: {}", parts[1])))?;
+    if min > 59 {
+        return Err(TimeParseError::InvalidValue(format!("Invalid minute: {min}")));
+    }
+
     let sec = if parts.len() == 3 {
-        parts[2]
+        let s = parts[2]
             .parse::<u32>()
-            .map_err(|_| TimeParseError::InvalidValue(format!("Invalid second: {}", parts[2])))?
+            .map_err(|_| TimeParseError::InvalidValue(format!("Invalid second: {}", parts[2])))?;
+        if s > 59 {
+            return Err(TimeParseError::InvalidValue(format!("Invalid second: {s}")));
+        }
+        s
     } else {
         0
     };
 
-    let naive_time = NaiveTime::from_hms_opt(hour, min, sec).ok_or_else(|| {
+    NaiveTime::from_hms_opt(hour, min, sec).ok_or_else(|| {
         TimeParseError::InvalidValue(format!("Invalid time values: {hour:02}:{min:02}:{sec:02}"))
-    })?;
-
-    let naive_date = now.date_naive();
-    let ndt = NaiveDateTime::new(naive_date, naive_time);
-
-    Local
-        .from_local_datetime(&ndt)
-        .earliest()
-        .ok_or_else(|| TimeParseError::InvalidValue("Local time conversion error".to_string()))
+    })
 }
 
 fn parse_standard_formats(input: &str) -> Result<SystemTime, TimeParseError> {
@@ -523,6 +580,7 @@ mod tests {
     #[test]
     fn test_parse_relative_expressions() {
         assert!(parse_time_expression("now").is_ok());
+        assert!(parse_time_expression("today").is_ok());
         assert!(parse_time_expression("yesterday").is_ok());
         assert!(parse_time_expression("tomorrow").is_ok());
 
@@ -540,6 +598,51 @@ mod tests {
 
         assert!(parse_time_expression("last month").is_ok());
         assert!(parse_time_expression("today 14:30").is_ok());
+        assert!(parse_time_expression("today at 14:30").is_ok());
+
+        // Relative dates with time (yesterday HH:MM, tomorrow HH:MM, 1 week ago HH:MM, etc.)
+        assert!(parse_time_expression("yesterday 14:30").is_ok());
+        assert!(parse_time_expression("yesterday at 14:30:45").is_ok());
+        assert!(parse_time_expression("tomorrow 09:15").is_ok());
+        assert!(parse_time_expression("tomorrow at 09:15:00").is_ok());
+        assert!(parse_time_expression("1 week ago 10:00").is_ok());
+        assert!(parse_time_expression("1 week ago at 10:00").is_ok());
+        assert!(parse_time_expression("2 days ago 16:20").is_ok());
+        assert!(parse_time_expression("3 weeks ago 08:00").is_ok());
+        assert!(parse_time_expression("+2 days 12:00").is_ok());
+        assert!(parse_time_expression("-1 day 18:30").is_ok());
+        assert!(parse_time_expression("next tuesday 15:45").is_ok());
+        assert!(parse_time_expression("last friday at 20:00").is_ok());
+    }
+
+    #[test]
+    fn test_parse_relative_with_time_values() {
+        use chrono::Timelike;
+
+        let now = Local::now();
+        let st = parse_time_expression("yesterday 14:30").unwrap();
+        let dt: chrono::DateTime<Local> = st.into();
+        let expected_date = (now - chrono::Duration::days(1)).date_naive();
+        assert_eq!(dt.date_naive(), expected_date);
+        assert_eq!(dt.hour(), 14);
+        assert_eq!(dt.minute(), 30);
+        assert_eq!(dt.second(), 0);
+
+        let st = parse_time_expression("tomorrow 08:15:20").unwrap();
+        let dt: chrono::DateTime<Local> = st.into();
+        let expected_date = (now + chrono::Duration::days(1)).date_naive();
+        assert_eq!(dt.date_naive(), expected_date);
+        assert_eq!(dt.hour(), 8);
+        assert_eq!(dt.minute(), 15);
+        assert_eq!(dt.second(), 20);
+
+        let st = parse_time_expression("1 week ago 11:45").unwrap();
+        let dt: chrono::DateTime<Local> = st.into();
+        let expected_date = (now - chrono::Duration::days(7)).date_naive();
+        assert_eq!(dt.date_naive(), expected_date);
+        assert_eq!(dt.hour(), 11);
+        assert_eq!(dt.minute(), 45);
+        assert_eq!(dt.second(), 0);
     }
 
     #[test]
@@ -549,6 +652,11 @@ mod tests {
         assert!(parse_time_expression("invalid_time_str").is_err());
         assert!(parse_time_expression("today 25:00").is_err());
         assert!(parse_time_expression("today 14:60").is_err());
+        assert!(parse_time_expression("yesterday 25:00").is_err());
+        assert!(parse_time_expression("yesterday 14:60").is_err());
+        assert!(parse_time_expression("tomorrow 24:00").is_err());
+        assert!(parse_time_expression("1 week ago 12:61").is_err());
+        assert!(parse_time_expression("1 week ago 12:30:75").is_err());
         assert!(parse_time_expression("next invalidday").is_err());
         assert!(parse_time_expression("202608141430.123").is_err());
     }

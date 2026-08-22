@@ -47,11 +47,16 @@ touch_and_stat "-15 minutes" -d "-15 minutes" "$TMPDIR_DEMO/f5.txt"
 print_header "Next weekday"
 touch_and_stat "next monday" -d "next monday" "$TMPDIR_DEMO/f6.txt"
 
+print_header "Relative with explicit time"
+touch_and_stat "yesterday 14:30"    -d "yesterday 14:30"    "$TMPDIR_DEMO/f7.txt"
+touch_and_stat "tomorrow 09:00"     -d "tomorrow 09:00"     "$TMPDIR_DEMO/f8.txt"
+touch_and_stat "1 week ago 10:00"   -d "1 week ago 10:00"   "$TMPDIR_DEMO/f9.txt"
+
 print_header "ISO 8601 datetime"
-touch_and_stat "ISO datetime" -d "2026-08-14 14:30" "$TMPDIR_DEMO/f7.txt"
+touch_and_stat "ISO datetime" -d "2026-08-14 14:30" "$TMPDIR_DEMO/f10.txt"
 
 print_header "GNU touch format (CCYYMMDDhhmm)"
-touch_and_stat "GNU format"   -d "202608141430"      "$TMPDIR_DEMO/f8.txt"
+touch_and_stat "GNU format"   -d "202608141430"      "$TMPDIR_DEMO/f11.txt"
 
 echo ""
 echo "Done."
