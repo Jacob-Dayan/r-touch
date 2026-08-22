@@ -182,9 +182,9 @@ You can find the benchmarking results and get more information about the benchma
 ---
 
 ## License
-This project is double licensed under [GPL-3.0-or-later](https://www.gnu.org/licenses/gpl-3.0.html) and [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0):
- - The rtouch-cli (src/main.rs) program is licensed under the GPL-3.0-or-later
- - The rtouch library (src/lib.rs) is licensed under the Apache-2.0 OR [MIT](https://opensource.org/licenses/MIT); which are both GPL-compatible; you can use it in projects licensed under either license
+This project is double licensed under [GPL-3.0-or-later](https://www.gnu.org/licenses/gpl-3.0.html) and [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0) OR [MIT](https://opensource.org/licenses/MIT):
+ - The R-touch-cli (src/main.rs) program is licensed under the GPL-3.0-or-later
+ - The R-touch library (src/lib.rs) is licensed under the Apache-2.0 OR [MIT](https://opensource.org/licenses/MIT); which are both GPL-compatible: you can use it in projects licensed under either license
 
 
 ### Note on Release Timestamps & Tags
