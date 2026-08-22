@@ -21,6 +21,19 @@ With rtouch, the parent directory creation is natively handled in a single atomi
 ```Bash
 rtouch -p .cargo/config.toml
 ```
+
+Or, let's take removing a directory & replacing it with a file. With basic GNU tools:
+
+```bash
+rm -rf sample
+touch sample
+```
+In r-touch, since version 1.5.1, we have:
+```bash
+rtouch -rd -f sample # Running with -rd is the same is running with --replace-directory 
+```
+> The -f flag is to skip asking whether should replace all the files in the directory if it's not empty, but for general uses - you might wanna avoid the -f flag 
+
 > **Note:** R-touch automatically replaces the `/` with a `\` character on windows workplaces, with zero-cost of overhead and performance.
 
 This makes `rtouch` both more efficient and significantly more practical for everyday workflow automation.
