@@ -132,14 +132,17 @@ pub fn touch<P: AsRef<Path>>(
     };
 
     if path_ref.is_dir() {
+        // Opening directories for writing can fail with `IsADirectory` on many
+        // Unix-like systems. Opening read-only is sufficient for setting
+        // times via the file descriptor; on Windows a custom flag is still
+        // required to open a directory handle.
         #[cfg(target_os = "windows")]
         let file = OpenOptions::new()
             .read(true)
-            .write(true)
             .custom_flags(0x0200_0000)
             .open(path_ref)?;
         #[cfg(not(target_os = "windows"))]
-        let file = OpenOptions::new().read(true).write(true).open(path_ref)?;
+        let file = OpenOptions::new().read(true).open(path_ref)?;
 
         let mut times = FileTimes::new();
         if set_atime {
