@@ -1,6 +1,6 @@
 [package]
 name = "rtouch"
-version = "1.5.0"
+version = "1.5.1"
 edition = "2024"
 description= "A custom touch implementation, written in Rust"
 license = "GPL-3.0-or-later"
