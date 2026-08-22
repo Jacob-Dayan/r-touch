@@ -94,11 +94,14 @@ rtouch -m document.pdf
 * **Relative Time Expressions:**
   ```bash
   rtouch -d "yesterday" file.txt
+  rtouch -d "yesterday 14:30" file.txt
   rtouch -d "2 days ago" file.txt
+  rtouch -d "1 week ago 10:00" file.txt
   rtouch -d "tomorrow" file.txt
+  rtouch -d "tomorrow 09:00" file.txt
   rtouch -d "+3 hours" file.txt
   rtouch -d "-30 minutes" file.txt
-  rtouch -d "next friday" file.txt
+  rtouch -d "next friday 18:00" file.txt
   rtouch -d "last month" file.txt
   rtouch -d "today 14:30" file.txt
   ```
