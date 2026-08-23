@@ -138,8 +138,8 @@ pub fn touch<P: AsRef<Path>>(
         // required to open a directory handle.
         #[cfg(target_os = "windows")]
         let file = OpenOptions::new()
-            .read(true)
-            .custom_flags(0x0200_0000)
+            .access_mode(0x0180) // FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES
+            .custom_flags(0x0200_0000) // FILE_FLAG_BACKUP_SEMANTICS
             .open(path_ref)?;
         #[cfg(not(target_os = "windows"))]
         let file = OpenOptions::new().read(true).open(path_ref)?;
