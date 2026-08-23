@@ -1,5 +1,10 @@
 # R-touch 🦀
 
+[![CI](https://github.com/Jacob-Dayan/r-touch/actions/workflows/ci.yml/badge.svg)](https://github.com/Jacob-Dayan/r-touch/actions/workflows/ci.yml)
+[![Crates.io](https://img.shields.io/crates/v/rtouch.svg)](https://crates.io/crates/rtouch)
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
+[![Rust](https://img.shields.io/badge/Rust-2024%20Edition-orange.svg)](https://www.rust-lang.org)
+
 The drop-in replacement that has its own date time parser as a library in [crates.io](https://crates.io/crates/rtouch), independently logs successes, failures, and time-modifications that we all've been waiting for, because it's well known that [`touch`](https://www.gnu.org/software/coreutils/touch) is the only tool separating us from world peace, and ruining our workflows! who doesn't need a RIIR for the [`GNU touch`](https://www.gnu.org/software/coreutils/touch)?.
 
 ## Why did I even create R-touch?
