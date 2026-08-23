@@ -455,10 +455,10 @@ fn parse_standard_formats(input: &str) -> Result<SystemTime, TimeParseError> {
         }
     }
 
-    if let Ok(nd) = NaiveDate::parse_from_str(input, "%Y-%m-%d") {
-        if let Some(nt) = NaiveTime::from_hms_opt(0, 0, 0) {
-            return system_time_from_naive(NaiveDateTime::new(nd, nt));
-        }
+    if let Ok(nd) = NaiveDate::parse_from_str(input, "%Y-%m-%d")
+        && let Some(nt) = NaiveTime::from_hms_opt(0, 0, 0)
+    {
+        return system_time_from_naive(NaiveDateTime::new(nd, nt));
     }
 
     Err(TimeParseError::UnsupportedExpression("".to_string()))

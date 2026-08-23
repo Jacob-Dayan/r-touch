@@ -13,12 +13,7 @@ use std::{fmt, io};
 /// Internal helper: write a message to `path` using `LogCore`.
 fn write_log(path: &std::path::Path, message: &fmt::Arguments) -> io::Result<()> {
     LogCore::new(path.to_path_buf()).log(message).map_err(|e| {
-        std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format_args!("Cannot write log to {}: {e}", path.display())
-                .as_str()
-                .unwrap(),
-        )
+        io::Error::other(format!("Cannot write log to {}: {e}", path.display()))
     })
 }
 
