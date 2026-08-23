@@ -1,6 +1,6 @@
 # R-touch 🦀
 
-[![CI](https://github.com/Jacob-Dayan/r-touch/actions/workflows/ci.yml/badge.svg)](https://github.com/Jacob-Dayan/r-touch/actions/workflows/ci.yml)
+[![CI](https://github.com/Jacob-Dayan/r-touch/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Jacob-Dayan/r-touch/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/rtouch.svg)](https://crates.io/crates/rtouch)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
 [![Rust](https://img.shields.io/badge/Rust-2024%20Edition-orange.svg)](https://www.rust-lang.org)
