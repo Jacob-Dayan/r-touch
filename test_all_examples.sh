@@ -38,9 +38,9 @@ printf "DONE.\nStarting tests...\n\n"
 find "${USAGE_DIR}" -type f -name "*.rs" | while read -r file_path; do
     filename=$(basename "${file_path}")
 
-    echo "=========================================="
+echo "=============================================================================================="
     echo "Testing: ${file_path}"
-    echo "=========================================="
+echo "=============================================================================================="
 
     cp "${file_path}" "${TEST_PROJECT_DIR}/src/main.rs"
 
@@ -53,9 +53,9 @@ done
 find "${PROJECT_ROOT}/usage/cli" -type f -name "*.sh" | while read -r file_path; do
     filename=$(basename "${file_path}")
 
-    echo "=========================================="
+echo "==============================================================================================="
     echo "Testing CLI: ${file_path}"
-    echo "=========================================="
+echo "==============================================================================================="
 
     chmod +x "${file_path}"
     bash "${file_path}"
