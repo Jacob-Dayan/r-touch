@@ -125,16 +125,22 @@ rtouch -m document.pdf
   rtouch -d "08191430" file.txt
   ```
 
-#### 6. Combining Flags
+#### 6. Combining Flags & Compact Syntax
+`R-touch` supports chaining short options together (e.g., combining `-a`, `-m`, and `-d "..."` into `-amd "..."`) as well as passing values directly attached to the flag without a space:
+
 ```bash
-# Set only access time to yesterday
-rtouch -a -d "yesterday" report.docx
+# Combine flags into a single short option group
+rtouch -amd "yesterday" report.docx
 
-# Set only modification time to a specific date
-rtouch -m -d "2026-01-01 00:00:00" archive.tar.gz
+# Pass date/time directly attached to the flag
+rtouch -dyesterday file.txt
 
-# Create with parent directories, custom date, and disable logging
-rtouch -p --no-log -d "2 days ago" logs/2026/08/old.log
+# Combine flags with attached date value
+rtouch -amdyesterday archive.tar.gz
+rtouch -pad"2 days ago" deep/nested/dir/log.txt
+
+# Combine with long options
+rtouch -am --no-log -dyesterday file.txt
 ```
 
 ---
