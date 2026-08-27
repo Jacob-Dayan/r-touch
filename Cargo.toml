@@ -1,6 +1,6 @@
 [package]
 name = "rtouch"
-version = "1.5.1"
+version = "1.5.2"
 edition = "2024"
 description= "A custom touch implementation, written in Rust"
 license = "GPL-3.0-or-later"
@@ -9,6 +9,7 @@ license = "GPL-3.0-or-later"
 [dependencies]
 chrono = { version = "0.4.38", default-features = false, features = ["clock", "std"] }
 clap = { version = "4.6.5", features = ["derive"] }
+clap_complete = "4.6.9"
 dirs-next = "2.0.0"
 fs-err = "3.3.1"
 

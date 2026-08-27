@@ -11,7 +11,10 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 
-use clap::Parser;
+mod completion;
+
+use clap::{CommandFactory, Parser};
+use completion::Shell;
 use rtouch::{ReplResult, log::logmgr, replace_dir, touch};
 use std::{
     borrow::Cow,
@@ -26,12 +29,12 @@ use std::{
 #[derive(Parser, Debug)]
 #[command(
     name = "R-touch",
-    version = "1.5.1, patch of 1.5.0",
+    version = "1.5.2, Pre-Release",
     about = "A custom touch implementation, written in Rust"
 )]
 pub struct Cli {
     /// File paths to touch or create.
-    #[arg(required = true)]
+    #[arg(required_unless_present_any = ["install_completion", "generate_completion"])]
     pub paths: Vec<String>,
 
     /// Create parent directories if they do not exist.
@@ -61,6 +64,20 @@ pub struct Cli {
     /// Disable logging to log files.
     #[arg(long = "no-log", default_value_t = true, action = clap::ArgAction::SetFalse)]
     pub should_log: bool,
+
+    /// Automatically install shell completions into the appropriate shell directory.
+    #[arg(
+        long = "install-completion",
+        alias = "completion",
+        value_enum,
+        num_args = 0..=1,
+        default_missing_value = None
+    )]
+    pub install_completion: Option<Option<Shell>>,
+
+    /// Print raw shell completion script directly to stdout.
+    #[arg(long = "generate-completion", value_enum, hide = true)]
+    pub generate_completion: Option<Shell>,
 }
 
 /// Internal options passed down to business logic processing.
@@ -116,6 +133,15 @@ fn normalize_cli_args(args: impl IntoIterator<Item = OsString>) -> Vec<OsString>
 /// Parses the CLI arguments and processes each path.
 pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
     let cli = Cli::parse_from(normalize_cli_args(std::env::args_os()));
+
+    if let Some(shell_opt) = cli.install_completion {
+        return completion::install_completion(Cli::command(), shell_opt);
+    }
+
+    if let Some(shell) = cli.generate_completion {
+        completion::generate_completion(Cli::command(), shell, &mut io::stdout());
+        return Ok(());
+    }
 
     let mut has_failed = false;
 
@@ -428,5 +454,39 @@ mod tests {
         assert!(cli.atime);
         assert!(cli.mtime);
         assert_eq!(cli.date, Some("yesterday".to_string()));
+    }
+
+    #[test]
+    fn test_cli_parsing_completion_flag() {
+        let cli_no_val = Cli::try_parse_from(["rtouch", "--install-completion"]).unwrap();
+        assert_eq!(cli_no_val.install_completion, Some(None));
+        assert!(cli_no_val.paths.is_empty());
+
+        let cli = Cli::try_parse_from(["rtouch", "--completion", "bash"]).unwrap();
+        assert_eq!(cli.install_completion, Some(Some(Shell::Bash)));
+        assert!(cli.paths.is_empty());
+
+        let cli_zsh = Cli::try_parse_from(["rtouch", "--completion=zsh"]).unwrap();
+        assert_eq!(cli_zsh.install_completion, Some(Some(Shell::Zsh)));
+        assert!(cli_zsh.paths.is_empty());
+
+        let cli_gen = Cli::try_parse_from(["rtouch", "--generate-completion", "fish"]).unwrap();
+        assert_eq!(cli_gen.generate_completion, Some(Shell::Fish));
+        assert!(cli_gen.paths.is_empty());
+    }
+
+    #[test]
+    fn test_generate_completion_output() {
+        let mut buf = Vec::new();
+        clap_complete::generate(Shell::Bash, &mut Cli::command(), "rtouch", &mut buf);
+        let output = String::from_utf8(buf).expect("valid utf8 completion output");
+        assert!(output.contains("rtouch"));
+        assert!(output.contains("--parents"));
+        assert!(output.contains("--replace-directory"));
+        assert!(output.contains("--atime"));
+        assert!(output.contains("--mtime"));
+        assert!(output.contains("--date"));
+        assert!(output.contains("--no-log"));
+        assert!(output.contains("--install-completion"));
     }
 }
