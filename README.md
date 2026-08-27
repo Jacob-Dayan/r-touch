@@ -56,10 +56,13 @@ Arguments:
 
 Options:
   -p, --parents                        Create parent directories if they do not exist
+  -r, --replace-directory              Replace an existing directory with an empty file
+  -f, --force                          Force deletion of a non-empty directory when replacing it
   -a, --atime, --access-time          Change only the access time
   -m, --mtime, --modification-time    Change only the modification time
   -d, --date <DATE>                    Parse date string expression and use it instead of current time
       --no-log                         Disable logging to log files
+      --install-completion [SHELL]     Automatically install shell completion script [alias: --completion]
   -h, --help                           Print help
   -V, --version                        Print version
 ```
@@ -142,6 +145,21 @@ rtouch -pad"2 days ago" deep/nested/dir/log.txt
 # Combine with long options
 rtouch -am --no-log -dyesterday file.txt
 ```
+
+#### 7. Automatic Shell Completions (`--install-completion` / `--completion`)
+Install tab completion scripts directly into your shell's configuration directory:
+
+```bash
+# Auto-detect current shell and install completion file automatically
+rtouch --install-completion
+
+# Or specify a target shell (bash, zsh, fish, powershell, elvish)
+rtouch --completion zsh
+rtouch --completion fish
+```
+*(Completions are automatically placed in standard user completion directories such as `~/.local/share/bash-completion/completions/rtouch` or `~/.config/fish/completions/rtouch.fish`).*
+
+
 
 ---
 
