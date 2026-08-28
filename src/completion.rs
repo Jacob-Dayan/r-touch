@@ -52,14 +52,12 @@ pub fn detect_shell() -> Option<Shell> {
         let path = Path::new(&shell_path);
         if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
             let name_lower = name.to_lowercase();
-            if name_lower.contains("bash") {
-                return Some(Shell::Bash);
-            } else if name_lower.contains("zsh") {
-                return Some(Shell::Zsh);
-            } else if name_lower.contains("fish") {
-                return Some(Shell::Fish);
-            } else if name_lower.contains("elvish") {
-                return Some(Shell::Elvish);
+            match name_lower.as_str() {
+                "bash" => return Some(Shell::Bash),
+                "zsh" => return Some(Shell::Zsh),
+                "fish" => return Some(Shell::Fish),
+                "elvish" => return Some(Shell::Elvish),
+                _ => {}
             }
         }
     }
@@ -171,9 +169,8 @@ pub fn install_completion(mut cmd: Command, shell_opt: Option<Shell>) -> io::Res
         }
     };
 
-    let home = dirs_next::home_dir().ok_or_else(|| {
-        io::Error::new(ErrorKind::NotFound, "Could not determine home directory")
-    })?;
+    let home = dirs_next::home_dir()
+        .ok_or_else(|| io::Error::new(ErrorKind::NotFound, "Could not determine home directory"))?;
 
     let target_paths = resolve_target_paths(&home, shell)?;
 
@@ -205,7 +202,9 @@ pub fn install_completion(mut cmd: Command, shell_opt: Option<Shell>) -> io::Res
             println!("  source {}", successfully_written[0].display());
         }
         Shell::Zsh => {
-            println!("\nEnsure your ~/.zshrc includes the completions directory in your fpath, e.g.:");
+            println!(
+                "\nEnsure your ~/.zshrc includes the completions directory in your fpath, e.g.:"
+            );
             println!("  fpath=(~/.zsh/completions $fpath)");
             println!("  autoload -Uz compinit && compinit");
         }
