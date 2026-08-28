@@ -7,7 +7,7 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 Set-Location "$PSScriptRoot\.."
 cargo build --release
 
-$targetDir = "$env:ProgramFiles\R-touch\bin"
+$targetDir = "$env:ProgramFiles\R-touch\app"
 New-Item -ItemType Directory -Force -Path $targetDir
 Move-Item -Force -Path ".\target\release\rtouch.exe" "$targetDir\rtouch.exe"
 $oldSystemPath = [Environment]::GetEnvironmentVariable("Path", "Machine")
