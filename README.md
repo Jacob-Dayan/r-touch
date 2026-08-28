@@ -27,7 +27,7 @@ Jacob Dayan (R-touch founder & developer):
 
 then I started working on R-touch as a main project. Well, it was actually my first project, that's why you can see commits like "Removed Cargo.lock; unnecessary file - it's being created automatically" from the early days.
 
-Jokes aside, rtouch is a fast, modern, and slightly opinionated recreation of the classic Unix `touch` command, built from scratch in Rust.
+Jokes aside, R-touch is a fast, modern, and slightly opinionated recreation of the classic Unix `touch` command, built from scratch in Rust.
 
 Unlike the classic `touch` that silently fails or acts weirdly when encountering directories, `R-touch` actually talks to you, manages its own system logs safely, and ensures you don't accidentally trash your system layout.
 
