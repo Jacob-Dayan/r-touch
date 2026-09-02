@@ -3,7 +3,7 @@
 //! [`rtouch::log::logmgr::success_log`] appends an entry to the general
 //! success log file located at:
 //!
-//! - **Linux/macOS**: `~/.local/share/R-touch/logs/r-touch.log`
+//! - **Linux/macOS**: `/var/log/R-touch/r-touch.log`
 //! - **Windows**: `%LOCALAPPDATA%\R-touch\logs\r-touch.log`
 //!
 //! Each entry is timestamped automatically by [`rtouch::log::log_core::LogCore`].

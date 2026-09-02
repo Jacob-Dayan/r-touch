@@ -51,35 +51,33 @@ impl LogConfig {
 
     /// Build default log paths for a specific application name from the
     /// environment with sensible fallbacks and without relying on external
-    /// crates. On Unix-like systems this prefers `$XDG_DATA_HOME` and falls back
-    /// to `~/.local/share`. On Windows it uses `%LOCALAPPDATA%`.
+    /// crates. On Unix-like systems this uses `/var/log/<app_name>`.
+    /// On Windows it uses `%LOCALAPPDATA%`.
     ///
     /// The application name is intentionally supplied by the caller so the
     /// library remains reusable as a general-purpose crate, while the binary can
     /// choose the concrete app directory name (for example, `R-touch`).
     pub fn from_env_defaults_for(app_name: impl AsRef<str>) -> Self {
-        use std::env;
         use std::path::PathBuf;
 
         #[cfg(target_family = "windows")]
-        let base: PathBuf = env::var_os("LOCALAPPDATA")
-            .map(PathBuf::from)
-            .unwrap_or(PathBuf::from(r"C:\Users\Public\AppData\Local"));
+        let log_dir = {
+            use std::env;
+            let base: PathBuf = env::var_os("LOCALAPPDATA")
+                .map(PathBuf::from)
+                .unwrap_or(PathBuf::from(r"C:\Users\Public\AppData\Local"));
+            base.join(app_name.as_ref()).join("logs")
+        };
 
         #[cfg(target_family = "unix")]
-        let base: PathBuf = env::var_os("XDG_DATA_HOME")
-            .map(PathBuf::from)
-            .or(env::var_os("HOME").map(|h| PathBuf::from(h).join(".local/share")))
-            .unwrap_or(PathBuf::from("/tmp"));
+        let log_dir = PathBuf::from("/var/log").join(app_name.as_ref());
 
-        let app_root = base.join(app_name.as_ref());
-        let success_log = app_root.join("logs").join("r-touch.log");
-        let error_log = app_root
-            .join("logs")
+        let success_log = log_dir.join("r-touch.log");
+        let error_log = log_dir
             .join("crashes")
             .join("file_creations.log");
 
-        let time_dir = app_root.join("logs").join("time_modifications");
+        let time_dir = log_dir.join("time_modifications");
         let atime_log = time_dir.join("atime_modification.log");
         let mtime_log = time_dir.join("mtime_modification.log");
 
@@ -419,5 +417,35 @@ mod tests {
         assert!(temp_dir.is_dir());
 
         let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_log_config_from_env_defaults_for() {
+        use std::path::PathBuf;
+
+        let cfg = LogConfig::from_env_defaults_for("test-app");
+        #[cfg(target_family = "unix")]
+        {
+            assert_eq!(cfg.success_log, PathBuf::from("/var/log/test-app/r-touch.log"));
+            assert_eq!(
+                cfg.error_log,
+                PathBuf::from("/var/log/test-app/crashes/file_creations.log")
+            );
+            assert_eq!(
+                cfg.atime_log,
+                PathBuf::from("/var/log/test-app/time_modifications/atime_modification.log")
+            );
+            assert_eq!(
+                cfg.mtime_log,
+                PathBuf::from("/var/log/test-app/time_modifications/mtime_modification.log")
+            );
+        }
+        #[cfg(target_family = "windows")]
+        {
+            assert!(cfg.success_log.ends_with(r"test-app\logs\r-touch.log"));
+            assert!(cfg.error_log.ends_with(r"test-app\logs\crashes\file_creations.log"));
+            assert!(cfg.atime_log.ends_with(r"test-app\logs\time_modifications\atime_modification.log"));
+            assert!(cfg.mtime_log.ends_with(r"test-app\logs\time_modifications\mtime_modification.log"));
+        }
     }
 }
