@@ -12,9 +12,9 @@ use std::{fmt, io};
 
 /// Internal helper: write a message to `path` using `LogCore`.
 fn write_log(path: &std::path::Path, message: &fmt::Arguments) -> io::Result<()> {
-    LogCore::new(path.to_path_buf()).log(message).map_err(|e| {
-        io::Error::other(format!("Cannot write log to {}: {e}", path.display()))
-    })
+    LogCore::new(path.to_path_buf())
+        .log(message)
+        .map_err(|e| io::Error::other(format!("Cannot write log to {}: {e}", path.display())))
 }
 
 /// Appends an entry to the general success log file configured in `cfg`.

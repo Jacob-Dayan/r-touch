@@ -41,7 +41,7 @@ Unlike the classic `touch` that silently fails or acts weirdly when encountering
 * **Flexible Date & Time Interpreter:** Supports ISO 8601, RFC 2822/3339, GNU touch syntax (`[[CC]YY]MMDDhhmm[.ss]`), and human expressions like `now`, `yesterday`, `tomorrow`, `2 days ago`, `+3 hours`, `-15 minutes`, `next tuesday`, and `today 14:30` — with clear and helpful error diagnostics if an invalid date is provided.
 * **Smart Directory Handling:** If you try to create a file where a directory already exists, `R-touch` stops and asks you what to do instead of blowing up.
 * **Parent Directory Creation (`-p` / `--parents`):** Need to touch `deep/nested/folder/file.txt`? Use `-p` or `--parents` and let `R-touch` build the directory tree for you.
-* **Automatic Logging:** Logs successes and errors into your local OS data directory (`~/.local/share/rtouch` on Linux or `%LocalAppData%\rtouch` on Windows) so you always have an audit trail. Can be disabled with `--no-log`.
+* **Automatic Logging:** Logs successes and errors into your system or app log directory (`/var/log/R-touch` on Linux or `%LocalAppData%\R-touch\logs` on Windows) so you always have an audit trail. Can be disabled with `--no-log`.
 * **Platform-Friendly:** Built-in Windows path separator normalization (because backslashes shouldn't be your problem).
 
 ---

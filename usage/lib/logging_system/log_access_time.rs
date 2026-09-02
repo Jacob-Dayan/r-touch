@@ -7,7 +7,7 @@
 //! | [`rtouch::log::logmgr::atime_modification_success`] | `time_modifications/atime_modification.log` | Access-time update succeeded |
 //! | [`rtouch::log::logmgr::time_modification_failure`] | `crashes/*`     | Date parsing or update failed |
 //!
-//! Both loggers share the same `<data_local_dir>/R-touch/logs/` root but write
+//! Both loggers share the same `/var/log/R-touch` (or `%LOCALAPPDATA%\R-touch\logs\` on Windows) root but write
 //! to separate files so that successes and failures can be audited independently.
 
 use std::io;

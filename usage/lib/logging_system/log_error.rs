@@ -3,7 +3,7 @@
 //! [`rtouch::log::logmgr::error_log`] appends an entry to the error/crash
 //! log file located at:
 //!
-//! - **Linux/macOS**: `~/.local/share/R-touch/logs/crashes/file_creations.log`
+//! - **Linux/macOS**: `/var/log/R-touch/crashes/file_creations.log`
 //! - **Windows**: `%LOCALAPPDATA%\R-touch\logs\crashes\file_creations.log`
 //!
 //! Use this logger whenever a file-operation fails and you want a persistent
