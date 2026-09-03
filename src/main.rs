@@ -195,7 +195,7 @@ pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
 
     for path in &touch_args.paths {
         let result = if path.is_dir() && touch_args.replace_directory {
-            replace_dir::replace_with_force(path, touch_args.force)
+            replace_dir::replace_with_force(path, touch_args.force, || prompt_replace_directory(path))
         } else {
             touch(
                 path,
@@ -209,6 +209,7 @@ pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
         match result {
             Ok(repl_res) => match repl_res {
                 ReplResult::Aborted => {
+                    eprintln!("Abort");
                     if touch_args.should_log {
                         logmgr::success_log(
                             cfg,
@@ -354,6 +355,18 @@ pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
     }
 
     Ok(())
+}
+
+fn prompt_replace_directory(path: &Path) -> bool {
+    eprintln!(
+        "'{p}' is a directory. Do you want to delete directory and replace it with the file? (y/n)",
+        p = path.display()
+    );
+    let mut input = String::new();
+    if io::stdin().read_line(&mut input).is_err() {
+        return false;
+    }
+    matches!(input.trim().to_ascii_lowercase().as_str(), "y" | "yes" | "")
 }
 
 #[cfg(test)]
