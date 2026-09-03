@@ -12,9 +12,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # =========================================================================
   # 5 GitHub Compile / Build Matrix Tests
-  # =========================================================================
 
   compile-linux:
     name: Compile - Linux (Ubuntu x86_64)
@@ -162,9 +160,7 @@ jobs:
       - name: Verify release binary generated
         run: test -f target/release/rtouch
 
-  # =========================================================================
   # 1 to 4 Behavior & Runtime Tests
-  # =========================================================================
 
   test-unit-integration:
     name: Behavior - Unit & Integration Tests (${{ matrix.os }})
