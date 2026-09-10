@@ -19,13 +19,13 @@ use rtouch::{ReplResult, log::logmgr, replace_dir, touch};
 use std::{
     borrow::Cow,
     ffi::OsString,
-    io::{self, ErrorKind},
+    io::{self, ErrorKind, Read},
     path::{Path, PathBuf},
     process,
     sync::LazyLock,
 };
 
-/// Command line arguments parsing structure.
+/// command line arguments parsing structure
 #[derive(Parser, Debug)]
 #[command(
     name = "R-touch",
@@ -33,39 +33,47 @@ use std::{
     about = "A custom touch implementation, written in Rust"
 )]
 pub struct Cli {
-    /// File paths to touch or create.
+    /// file paths to touch or create
     #[arg(required_unless_present_any = ["install_completion", "generate_completion"])]
     pub paths: Vec<String>,
 
-    /// Create parent directories if they do not exist.
+    /// create parent directories if they do not exist
     #[arg(short, long)]
     pub parents: bool,
 
-    /// Replace an existing directory with an empty file.
+    /// replace an existing directory with an empty file
     #[arg(short = 'r', long = "replace-directory")]
     pub replace_directory: bool,
 
-    /// Force deletion of a non-empty directory when replacing it.
+    /// force deletion of a non-empty directory when replacing it
     #[arg(short = 'f', long = "force")]
     pub force: bool,
 
-    /// Change only the access time.
+    /// change only the access time
     #[arg(short = 'a', long = "atime", alias = "access-time")]
     pub atime: bool,
 
-    /// Change only the modification time.
+    /// change only the modification time
     #[arg(short = 'm', long = "mtime", alias = "modification-time")]
     pub mtime: bool,
 
-    /// Parse date string expression and use it instead of current time.
+    /// parse date string expression and use it instead of current time
     #[arg(short = 'd', long = "date", allow_hyphen_values = true)]
     pub date: Option<String>,
 
-    /// Disable logging to log files.
+    /// disable logging to log files
     #[arg(long = "no-log", default_value_t = true, action = clap::ArgAction::SetFalse)]
     pub should_log: bool,
 
-    /// Automatically install shell completions into the appropriate shell directory.
+    /// force enable logging to log files (overrides config)
+    #[arg(long = "log")]
+    pub force_log: bool,
+
+    /// custom directory to store log files
+    #[arg(long = "log-dir", value_name = "DIR")]
+    pub log_dir: Option<PathBuf>,
+
+    /// automatically install shell completions into the appropriate shell directory
     #[arg(
         long = "install-completion",
         alias = "completion",
@@ -75,12 +83,12 @@ pub struct Cli {
     )]
     pub install_completion: Option<Option<Shell>>,
 
-    /// Print raw shell completion script directly to stdout.
+    /// print raw shell completion script directly to stdout
     #[arg(long = "generate-completion", value_enum, hide = true)]
     pub generate_completion: Option<Shell>,
 }
 
-/// Internal options passed down to business logic processing.
+/// internal options passed down to business logic processing
 struct TouchArgs<'a> {
     paths: Vec<Cow<'a, Path>>,
     create_parents: bool,
@@ -93,14 +101,11 @@ struct TouchArgs<'a> {
 
 const APP_NAME: &str = "R-touch";
 
-// Default LogConfig for the binary. Using a LazyLock ensures the default
-// paths are computed once at startup and can be referenced throughout the
-// process lifetime. The app-specific directory name is kept here so the library
-// remains reusable for other crates and applications.
+// default [`LogConfig`] for the binary, computed once at startup via LazyLock
+// so app-specific directory name stays in binary while library stays reusable
 static DEFAULT_LOG_CONFIG: LazyLock<rtouch::LogConfig> =
     LazyLock::new(|| rtouch::LogConfig::from_env_defaults_for(APP_NAME));
 
-/// Matches the [`run`] function and returns the appropriate exit code.
 fn main() -> process::ExitCode {
     match run(&DEFAULT_LOG_CONFIG) {
         Ok(_) => process::ExitCode::SUCCESS,
@@ -108,7 +113,7 @@ fn main() -> process::ExitCode {
     }
 }
 
-/// Shortcut for `std::io::Error::new(std::io::ErrorKind::Other, e)`
+/// shortcut for `std::io::Error::new(std::io::ErrorKind::Other, e)`
 macro_rules! new_io_error {
     ($e:expr) => {
         std::io::Error::new(std::io::ErrorKind::Other, $e)
@@ -128,19 +133,55 @@ fn normalize_cli_args(args: impl IntoIterator<Item = OsString>) -> Vec<OsString>
         .collect()
 }
 
-/// Runs the rtouch operations for all specified paths.
-///
-/// Parses the CLI arguments and processes each path.
+/// run rtouch operations for all specified paths
 pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
     let cli = Cli::parse_from(normalize_cli_args(std::env::args_os()));
 
+    let is_first_startup = rtouch::conf::default_config_path().is_some_and(|p| !p.exists());
+
+    let mut config = match rtouch::conf::load_default() {
+        Ok(Some(c)) => c,
+        _ => rtouch::conf::AppConfig::default(),
+    };
+
+    let custom_log_cfg;
+    let cfg = if let Some(ref dir) = cli.log_dir {
+        custom_log_cfg = rtouch::LogConfig::from_log_dir(dir);
+        &custom_log_cfg
+    } else if let Some(ref dir) = config.log_dir {
+        custom_log_cfg = rtouch::LogConfig::from_log_dir(dir);
+        &custom_log_cfg
+    } else {
+        cfg
+    };
+
+    cfg.ensure_permissions();
+
     if let Some(shell_opt) = cli.install_completion {
+        if is_first_startup {
+            config.completions = true;
+            let _ = rtouch::conf::save_default(&config);
+        }
         return completion::install_completion(Cli::command(), shell_opt);
     }
 
     if let Some(shell) = cli.generate_completion {
         completion::generate_completion(Cli::command(), shell, &mut io::stdout());
         return Ok(());
+    }
+
+    if is_first_startup {
+        if completion::are_completions_installed() {
+            config.completions = true;
+        } else {
+            eprintln!("Do you want to install shell completions automatically? (y/n)");
+            let install = read_confirmation();
+            config.completions = install;
+            if install {
+                let _ = completion::install_completion(Cli::command(), None);
+            }
+        }
+        let _ = rtouch::conf::save_default(&config);
     }
 
     let mut has_failed = false;
@@ -157,19 +198,33 @@ pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
         paths.push(Cow::Owned(PathBuf::from(path_str)));
     }
 
+    let should_log = if cli.force_log {
+        true
+    } else if !cli.should_log {
+        false
+    } else {
+        config.should_log
+    };
+
+    let (mut atime, mut mtime) = (cli.atime, cli.mtime);
+    if atime && !mtime && config.time_modify.mtime_on_atime {
+        mtime = true;
+    }
+    if mtime && !atime && config.time_modify.atime_on_mtime {
+        atime = true;
+    }
+
     let touch_args = TouchArgs {
         paths,
         create_parents: cli.parents,
         replace_directory: cli.replace_directory,
         force: cli.force,
-        should_log: cli.should_log,
-        atime: cli.atime,
-        mtime: cli.mtime,
+        should_log,
+        atime,
+        mtime,
     };
 
-    // `updated_atime` and `updated_mtime` describe which timestamps will be
-    // updated by each touch call. If both flags are false, we update both
-    // access and modification times.
+    // describe which timestamps will be updated (if both flags are false, update both)
     let updated_atime = touch_args.atime || (!touch_args.atime && !touch_args.mtime);
     let updated_mtime = touch_args.mtime || (!touch_args.atime && !touch_args.mtime);
 
@@ -195,7 +250,9 @@ pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
 
     for path in &touch_args.paths {
         let result = if path.is_dir() && touch_args.replace_directory {
-            replace_dir::replace_with_force(path, touch_args.force, || prompt_replace_directory(path))
+            replace_dir::replace_with_force(path, touch_args.force, || {
+                prompt_replace_directory(path)
+            })
         } else {
             touch(
                 path,
@@ -357,16 +414,26 @@ pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
     Ok(())
 }
 
+fn parse_confirmation(mut reader: impl Read) -> bool {
+    let mut buf = [0u8; 4];
+    let n = match reader.read(&mut buf) {
+        Ok(n) => n,
+        Err(_) => return true,
+    };
+    let first = buf[..n].iter().copied().find(|b| !b.is_ascii_whitespace());
+    !matches!(first, Some(b'n' | b'N'))
+}
+
+fn read_confirmation() -> bool {
+    parse_confirmation(io::stdin())
+}
+
 fn prompt_replace_directory(path: &Path) -> bool {
     eprintln!(
         "'{p}' is a directory. Do you want to delete directory and replace it with the file? (y/n)",
         p = path.display()
     );
-    let mut input = String::new();
-    if io::stdin().read_line(&mut input).is_err() {
-        return false;
-    }
-    matches!(input.trim().to_ascii_lowercase().as_str(), "y" | "yes" | "")
+    read_confirmation()
 }
 
 #[cfg(test)]
@@ -500,6 +567,45 @@ mod tests {
         assert!(output.contains("--mtime"));
         assert!(output.contains("--date"));
         assert!(output.contains("--no-log"));
+        assert!(output.contains("--log-dir"));
         assert!(output.contains("--install-completion"));
+    }
+
+    #[test]
+    fn test_cli_parsing_log_dir_flag() {
+        let cli =
+            Cli::try_parse_from(["rtouch", "--log-dir", "/custom/logs", "file.txt"]).unwrap();
+        assert_eq!(cli.paths, vec!["file.txt"]);
+        assert_eq!(cli.log_dir, Some(PathBuf::from("/custom/logs")));
+
+        let cli2 =
+            Cli::try_parse_from(["rtouch", "--log-dir=/another/path", "file.txt"]).unwrap();
+        assert_eq!(cli2.log_dir, Some(PathBuf::from("/another/path")));
+    }
+
+    #[test]
+    fn test_parse_confirmation_starts_with_n_declines() {
+        assert!(!parse_confirmation(&b"n"[..]));
+        assert!(!parse_confirmation(&b"N"[..]));
+        assert!(!parse_confirmation(&b"no"[..]));
+        assert!(!parse_confirmation(&b"NO"[..]));
+        assert!(!parse_confirmation(&b"No\n"[..]));
+        assert!(!parse_confirmation(&b"   n"[..]));
+        assert!(!parse_confirmation(&b" \tn"[..]));
+        assert!(!parse_confirmation(&b"never\n"[..]));
+    }
+
+    #[test]
+    fn test_parse_confirmation_other_inputs_accept() {
+        assert!(parse_confirmation(&b"y"[..]));
+        assert!(parse_confirmation(&b"Y"[..]));
+        assert!(parse_confirmation(&b"yes"[..]));
+        assert!(parse_confirmation(&b"YES"[..]));
+        assert!(parse_confirmation(&b"\n"[..]));
+        assert!(parse_confirmation(&b"\r\n"[..]));
+        assert!(parse_confirmation(&b"   \n"[..]));
+        assert!(parse_confirmation(&b""[..]));
+        assert!(parse_confirmation(&b"ok"[..]));
+        assert!(parse_confirmation(&b"sure"[..]));
     }
 }
