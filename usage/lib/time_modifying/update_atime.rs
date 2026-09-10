@@ -8,7 +8,7 @@ use std::{fs, io, path::Path};
 
 use std::time::UNIX_EPOCH;
 
-/// Touches `path`, setting only its access time to `atime` (a date expression).
+/// touch `path`, setting only its access time to `atime` (a date expression)
 fn set_access_time_of_file(path: &str, atime: &str) -> Result<rtouch::ReplResult, io::Error> {
     let time = rtouch::datetime::parse_time_expression(atime)
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e.to_string()))?;
@@ -48,7 +48,7 @@ mod tests {
     use super::set_access_time_of_file;
     use std::time::UNIX_EPOCH;
 
-    /// After updating, the stored atime must match `yesterday` within 5 s.
+    /// stored atime must match `yesterday` within 5 s after update
     #[test]
     fn atime_matches_yesterday() {
         let path = std::env::temp_dir().join("rtouch_usage_update_atime.txt");

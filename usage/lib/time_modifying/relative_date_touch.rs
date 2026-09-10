@@ -25,7 +25,7 @@ mod tests {
     use super::touch_with_expr;
     use std::time::Duration;
 
-    /// The file's atime should be approximately 24 h in the past.
+    /// file's atime should be approximately 24 h in the past
     #[test]
     fn yesterday_sets_atime_to_24h_ago() {
         let path = std::env::temp_dir().join("rtouch_usage_relative_t1.txt");
@@ -40,7 +40,7 @@ mod tests {
         } else {
             expected.duration_since(atime)
         };
-        // Allow up to 5 seconds of tolerance (test runner startup + OS rounding).
+        // allow up to 5 seconds of tolerance (test runner startup + OS rounding)
         assert!(diff.unwrap() < Duration::from_secs(5));
 
         std::fs::remove_file(&path).unwrap();

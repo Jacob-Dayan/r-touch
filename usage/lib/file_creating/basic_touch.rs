@@ -20,7 +20,7 @@ fn main() -> io::Result<()> {
 mod tests {
     use rtouch::ReplResult;
 
-    /// `touch` must succeed and signal that no directory replacement was needed.
+    /// [`rtouch::touch`] must succeed and signal that no directory replacement was needed
     #[test]
     fn touch_returns_not_required() {
         let path = std::env::temp_dir().join("rtouch_usage_basic_touch_1.txt");
@@ -32,7 +32,7 @@ mod tests {
         std::fs::remove_file(&path).unwrap();
     }
 
-    /// The file must actually exist on disk after `touch`.
+    /// file must actually exist on disk after [`rtouch::touch`]
     #[test]
     fn file_exists_after_touch() {
         let path = std::env::temp_dir().join("rtouch_usage_basic_touch_2.txt");

@@ -31,8 +31,8 @@ fn main() -> io::Result<()> {
 mod tests {
     use std::path::PathBuf;
 
-    fn test_config() -> (rtouch::LogConfig, PathBuf) {
-        let temp_dir = std::env::temp_dir().join(format!("rtouch_test_log_access_time_{}", std::process::id()));
+    fn test_config(name: &str) -> (rtouch::LogConfig, PathBuf) {
+        let temp_dir = std::env::temp_dir().join(format!("rtouch_test_log_access_time_{}_{}", std::process::id(), name));
         let _ = std::fs::remove_dir_all(&temp_dir);
         let cfg = rtouch::LogConfig::new(
             temp_dir.join("r-touch.log"),
@@ -43,10 +43,10 @@ mod tests {
         (cfg, temp_dir)
     }
 
-    /// `atime_modification_success` must write without error.
+    /// [`rtouch::log::logmgr::atime_modification_success`] must write without error
     #[test]
     fn access_time_success_returns_ok() {
-        let (cfg, temp_dir) = test_config();
+        let (cfg, temp_dir) = test_config("success");
         let result = rtouch::log::logmgr::atime_modification_success(&cfg, &format_args!(
             "test: access_time_success_returns_ok"
         ));
@@ -59,10 +59,10 @@ mod tests {
         let _ = std::fs::remove_dir_all(&temp_dir);
     }
 
-    /// `time_modification_failure` must write without error.
+    /// [`rtouch::log::logmgr::time_modification_failure`] must write without error
     #[test]
     fn access_time_failure_returns_ok() {
-        let (cfg, temp_dir) = test_config();
+        let (cfg, temp_dir) = test_config("failure");
         let result = rtouch::log::logmgr::time_modification_failure(&cfg, &format_args!(
             "test: access_time_failure_returns_ok"
         ));

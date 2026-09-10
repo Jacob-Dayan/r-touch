@@ -11,46 +11,41 @@ use fs_err::{self as fs, File};
 use std::io;
 use std::path::Path;
 
-/// Outcome of a directory-to-file replacement attempt.
+/// outcome of a directory-to-file replacement attempt
 ///
-/// Returned by [`replace`] and propagated up to [`crate::touch`] so that
-/// callers (e.g. the CLI binary) can decide how to log or report the result.
+/// returned by [`replace`] and propagated up to [`crate::touch`] so that
+/// callers (e.g. the CLI binary) can decide how to log or report the result
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ReplResult {
-    /// The directory was successfully removed and replaced with an empty file.
+    /// directory was successfully removed and replaced with an empty file
     Completed,
-    /// The user declined the replacement prompt; no changes were made.
+    /// user declined the replacement prompt; no changes were made
     Aborted,
-    /// No replacement was necessary (the path was not a directory).
+    /// no replacement was necessary (the path was not a directory)
     NotRequired,
 }
 
-/// User-input decision for a directory-replacement prompt.
+/// user-input decision for a directory-replacement prompt
 ///
-/// Constructed from a decision closure via [`Action::new`] and consumed by [`replace`].
+/// constructed from a decision closure via [`Action::new`] and consumed by [`replace`]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Action {
-    /// The user confirmed the replacement.
+    /// user confirmed the replacement
     Accept,
-    /// The user declined the replacement.
+    /// user declined the replacement
     Abort,
 }
 
 impl From<bool> for Action {
     fn from(value: bool) -> Self {
-        if value {
-            Self::Accept
-        } else {
-            Self::Abort
-        }
+        if value { Self::Accept } else { Self::Abort }
     }
 }
 
 impl Action {
-    /// Evaluates the decision closure and returns the corresponding [`Action`].
+    /// evaluate decision closure and return corresponding [`Action`]
     ///
-    /// If the closure returns `true`, returns [`Action::Accept`];
-    /// otherwise returns [`Action::Abort`].
+    /// returns [`Action::Accept`] if closure returns `true`, otherwise [`Action::Abort`]
     pub fn new<F>(f: F) -> Self
     where
         F: FnOnce() -> bool,
@@ -59,19 +54,19 @@ impl Action {
     }
 }
 
-/// Attempts to replace the directory at `path` with an empty file.
+/// attempt to replace directory at `path` with an empty file
 ///
-/// Prompts the caller via the `confirm` closure when replacement is required.
-/// If confirmed, the directory tree is removed with [`fs_err::remove_dir_all`]
-/// and an empty file is created in its place.
+/// prompts caller via `confirm` closure when replacement is required;
+/// if confirmed, directory tree is removed with [`fs_err::remove_dir_all`]
+/// and an empty file is created in its place
 ///
-/// Logging is intentionally **not** performed here; the caller is responsible
-/// for logging the returned [`ReplResult`].
+/// logging is intentionally not performed here; caller is responsible
+/// for logging returned [`ReplResult`]
 ///
 /// # Errors
 ///
-/// Returns an [`std::io::Error`] if the directory cannot be removed or the
-/// replacement file cannot be created.
+/// returns an [`std::io::Error`] if directory cannot be removed or
+/// replacement file cannot be created
 pub fn replace<P, F>(path: P, confirm: F) -> io::Result<ReplResult>
 where
     P: AsRef<Path>,
@@ -80,11 +75,11 @@ where
     replace_with_force(path, false, confirm)
 }
 
-/// Attempts to replace the directory at `path` with an empty file.
+/// attempt to replace directory at `path` with an empty file
 ///
-/// Empty directories are replaced immediately without prompting. Non-empty
+/// empty directories are replaced immediately without prompting; non-empty
 /// directories only evaluate `confirm` when `force` is false; if `force` is true,
-/// the directory is deleted without prompting.
+/// directory is deleted without prompting
 pub fn replace_with_force<P, F>(path: P, force: bool, confirm: F) -> io::Result<ReplResult>
 where
     P: AsRef<Path>,
@@ -95,9 +90,7 @@ where
         return Ok(ReplResult::NotRequired);
     }
 
-    let is_empty = fs::read_dir(path_ref)
-        .map(|mut dir| dir.next().is_none())
-        .unwrap_or(false);
+    let is_empty = fs::read_dir(path_ref).is_ok_and(|mut dir| dir.next().is_none());
 
     if is_empty {
         fs::remove_dir(path_ref)?;

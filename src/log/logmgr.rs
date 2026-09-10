@@ -10,32 +10,32 @@
 use crate::log::log_core::LogCore;
 use std::{fmt, io};
 
-/// Internal helper: write a message to `path` using `LogCore`.
+/// internal helper: write a message to `path` using [`LogCore`]
 fn write_log(path: &std::path::Path, message: &fmt::Arguments) -> io::Result<()> {
     LogCore::new(path.to_path_buf())
         .log(message)
         .map_err(|e| io::Error::other(format!("Cannot write log to {}: {e}", path.display())))
 }
 
-/// Appends an entry to the general success log file configured in `cfg`.
+/// append an entry to general success log file configured in `cfg`
 ///
 /// # Errors
 ///
-/// Returns an error if the log file cannot be written.
+/// returns an error if log file cannot be written
 pub fn success_log(cfg: &crate::LogConfig, message: &fmt::Arguments) -> io::Result<()> {
     write_log(&cfg.success_log, message)
 }
 
-/// Appends an entry to the error/crash log file configured in `cfg`.
+/// append an entry to error/crash log file configured in `cfg`
 ///
 /// # Errors
 ///
-/// Returns an error if the log file cannot be written.
+/// returns an error if log file cannot be written
 pub fn error_log(cfg: &crate::LogConfig, message: &fmt::Arguments) -> io::Result<()> {
     write_log(&cfg.error_log, message)
 }
 
-/// Appends an entry for a successful access-time (atime) update.
+/// append an entry for a successful access-time (atime) update
 pub fn atime_modification_success(
     cfg: &crate::LogConfig,
     message: &fmt::Arguments,
@@ -43,7 +43,7 @@ pub fn atime_modification_success(
     write_log(&cfg.atime_log, message)
 }
 
-/// Appends an entry for a successful modification-time (mtime) update.
+/// append an entry for a successful modification-time (mtime) update
 pub fn mtime_modification_success(
     cfg: &crate::LogConfig,
     message: &fmt::Arguments,
@@ -51,14 +51,11 @@ pub fn mtime_modification_success(
     write_log(&cfg.mtime_log, message)
 }
 
-/// Appends an entry describing a failure related to time modification (parsing
-/// or update failures). Errors are still written under the `crashes/` log in
-/// the configured `error_log` path.
+/// append an entry describing failure related to time modification (parsing or update failures)
 pub fn time_modification_failure(
     cfg: &crate::LogConfig,
     message: &fmt::Arguments,
 ) -> io::Result<()> {
-    // Keep failures under the configured `error_log` (crashes/...) to preserve
-    // the previous behaviour of writing errors to the crash logs.
+    // keep failures under configured `error_log` (crashes/...) to preserve previous behavior
     write_log(&cfg.error_log, message)
 }

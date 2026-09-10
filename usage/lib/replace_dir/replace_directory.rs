@@ -16,7 +16,7 @@
 use std::io;
 
 fn main() -> io::Result<()> {
-    // When called on a plain file (or a new path), the result is NotRequired.
+    // when called on a plain file (or new path), result is NotRequired
     let path = std::env::temp_dir().join("rtouch_usage_repl_main.txt");
     let result = rtouch::touch(&path, false, None, false, false)?;
     match result {
@@ -32,7 +32,7 @@ fn main() -> io::Result<()> {
 mod tests {
     use rtouch::ReplResult;
 
-    /// Touching a normal (non-directory) path always returns `NotRequired`.
+    /// touching a normal (non-directory) path always returns `NotRequired`
     #[test]
     fn non_directory_returns_not_required() {
         let path = std::env::temp_dir().join("rtouch_usage_repl_t1.txt");

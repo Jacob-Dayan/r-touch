@@ -11,12 +11,10 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 
-//! Shell completion generation and automated installation routines for `rtouch`.
+//! shell completion generation and automated installation routines for `rtouch`
 //!
-//! This module provides utilities to automatically detect active user shells
-//! (such as Bash, Zsh, Fish, PowerShell, and Elvish), generate their corresponding
-//! completion scripts using `clap_complete`, and install them into standard user
-//! configuration directories without requiring root / superuser privileges.
+//! utilities to automatically detect active user shells, generate completion scripts
+//! using `clap_complete`, and install them into standard user configuration directories
 
 use clap::Command;
 pub use clap_complete::Shell;
@@ -25,19 +23,18 @@ use std::{
     path::{Path, PathBuf},
 };
 
-/// Binary name used when generating shell completion definitions.
+/// binary name used when generating shell completion definitions
 pub const BIN_NAME: &str = "rtouch";
 
-/// Inspects the environment to determine the user's active shell.
+/// inspect environment to determine active shell
 ///
-/// Looks at the `$SHELL` environment variable on Unix-like operating systems
-/// (extracting the binary name such as `bash`, `zsh`, `fish`, or `elvish`).
-/// On Windows, checks for standard PowerShell environment indicators.
+/// checks `$SHELL` on Unix (extracting binary name like `bash`, `zsh`, `fish`, `elvish`)
+/// or standard PowerShell environment indicators on Windows
 ///
 /// # Returns
 ///
-/// * `Some(Shell)` if a supported shell is identified.
-/// * `None` if the active shell cannot be determined.
+/// * `Some([`Shell`])` if a supported shell is identified
+/// * `None` if active shell cannot be determined
 ///
 /// # Examples
 ///
@@ -72,9 +69,9 @@ pub fn detect_shell() -> Option<Shell> {
     None
 }
 
-/// Resolves the user-level target file path for a given shell's completion script.
+/// resolve user-level target file path for a given shell completion script
 ///
-/// Creates any required parent directories under the user's home directory.
+/// creates any required parent directories under user's home directory
 ///
 /// # Supported Shell Locations:
 /// - **Bash**: `~/.local/share/bash-completion/completions/rtouch`
@@ -85,8 +82,7 @@ pub fn detect_shell() -> Option<Shell> {
 ///
 /// # Errors
 ///
-/// Returns an [`io::Error`] if the home directory cannot be located or directory
-/// creation fails.
+/// returns an [`io::Error`] if home directory cannot be located or directory creation fails
 fn resolve_target_paths(home: &Path, shell: Shell) -> io::Result<Vec<PathBuf>> {
     match shell {
         Shell::Bash => {
@@ -138,22 +134,21 @@ fn resolve_target_paths(home: &Path, shell: Shell) -> io::Result<Vec<PathBuf>> {
     }
 }
 
-/// Automatically installs shell completion scripts into standard user completion directories.
+/// automatically install shell completion scripts into standard user completion directories
 ///
-/// If `shell_opt` is `None`, this function attempts to infer the active shell
-/// using [`detect_shell`]. Once the target shell is known, it generates the completion
-/// script and writes it to the user's shell configuration directories.
+/// infers active shell via [`detect_shell`] if `shell_opt` is `None`, then generates
+/// completion script and writes to user shell configuration directories
 ///
 /// # Arguments
 ///
-/// * `cmd` - The [`clap::Command`] instance representing the CLI structure.
-/// * `shell_opt` - Optional shell target. If `None`, automatically detected.
+/// * `cmd` - [`clap::Command`] instance representing CLI structure
+/// * `shell_opt` - optional shell target (inferred if `None`)
 ///
 /// # Errors
 ///
-/// * Returns [`io::ErrorKind::InvalidInput`] if the shell cannot be detected.
-/// * Returns [`io::ErrorKind::NotFound`] if the user's home directory cannot be determined.
-/// * Returns an [`io::Error`] if file creation or write fails.
+/// * returns [`io::ErrorKind::InvalidInput`] if shell cannot be detected
+/// * returns [`io::ErrorKind::NotFound`] if user home directory cannot be determined
+/// * returns an [`io::Error`] if file creation or write fails
 pub fn install_completion(mut cmd: Command, shell_opt: Option<Shell>) -> io::Result<()> {
     let shell = match shell_opt.or_else(detect_shell) {
         Some(s) => s,
@@ -217,18 +212,33 @@ pub fn install_completion(mut cmd: Command, shell_opt: Option<Shell>) -> io::Res
     Ok(())
 }
 
-/// Generates raw shell completion script directly to any stream implementing [`Write`].
+/// generate raw shell completion script directly to any stream implementing [`Write`]
 ///
-/// This is typically used to print completions directly to standard output for
-/// custom redirection or packaging scripts.
+/// typically used to print completions directly to standard output for
+/// custom redirection or packaging scripts
 ///
 /// # Arguments
 ///
-/// * `cmd` - The [`clap::Command`] instance representing the CLI structure.
-/// * `shell` - The target shell for which to generate completions.
-/// * `out` - Destination buffer or standard output stream.
+/// * `cmd` - [`clap::Command`] instance representing CLI structure
+/// * `shell` - target shell for which to generate completions
+/// * `out` - destination buffer or standard output stream
 pub fn generate_completion(mut cmd: Command, shell: Shell, out: &mut impl Write) {
     clap_complete::generate(shell, &mut cmd, BIN_NAME, out);
+}
+
+/// check if completion files already exist for whatever shell the user is running
+#[must_use]
+pub fn are_completions_installed() -> bool {
+    let Some(shell) = detect_shell() else {
+        return true;
+    };
+    let Some(home) = dirs_next::home_dir() else {
+        return true;
+    };
+    let Ok(paths) = resolve_target_paths(&home, shell) else {
+        return true;
+    };
+    paths.iter().any(|p| p.exists())
 }
 
 #[cfg(test)]
@@ -258,6 +268,18 @@ mod tests {
             let paths = resolve_target_paths(&temp_home, shell).unwrap();
             assert!(!paths.is_empty(), "Paths should not be empty for {shell}");
         }
+        let _ = fs_err::remove_dir_all(&temp_home);
+    }
+
+    #[test]
+    fn test_are_completions_installed() {
+        let temp_home = std::env::temp_dir().join("rtouch_test_installed_check");
+        let _ = fs_err::remove_dir_all(&temp_home);
+        let paths = resolve_target_paths(&temp_home, Shell::Bash).unwrap();
+        assert!(!paths.iter().any(|p| p.exists()));
+
+        fs_err::write(&paths[0], b"mock completion").unwrap();
+        assert!(paths.iter().any(|p| p.exists()));
         let _ = fs_err::remove_dir_all(&temp_home);
     }
 }
