@@ -46,6 +46,10 @@ Unlike the classic `touch` that silently fails or acts weirdly when encountering
 
 ---
 
+> 🚀 **Quick Start**: Check out [QUICK-START.md](QUICK-START.md) for a rapid 5-minute walkthrough of commands, logging options, and configuration examples.
+
+---
+
 ## CLI Options & Usage
 
 ```text
@@ -62,6 +66,8 @@ Options:
   -m, --mtime, --modification-time    Change only the modification time
   -d, --date <DATE>                    Parse date string expression and use it instead of current time
       --no-log                         Disable logging to log files
+      --log                            Force enable logging to log files (overrides config)
+      --log-dir <DIR>                  Custom directory to store log files
       --install-completion [SHELL]     Automatically install shell completion script [alias: --completion]
   -h, --help                           Print help
   -V, --version                        Print version
@@ -147,7 +153,9 @@ rtouch -am --no-log -dyesterday file.txt
 ```
 
 #### 7. Automatic Shell Completions (`--install-completion` / `--completion`)
-Install tab completion scripts directly into your shell's configuration directory:
+On first startup, `rtouch` asks if you want shell completions installed (hit Enter or anything other than `n`/`no` to say yes).
+
+You can also install or update completions anytime:
 
 ```bash
 # Auto-detect current shell and install completion file automatically
@@ -159,7 +167,29 @@ rtouch --completion fish
 ```
 *(Completions are automatically placed in standard user completion directories such as `~/.local/share/bash-completion/completions/rtouch` or `~/.config/fish/completions/rtouch.fish`).*
 
+#### 8. Configuration File (`config.toml`)
+`rtouch` reads configuration from `~/.config/rtouch/config.toml` (or `%APPDATA%\rtouch\config.toml` on Windows). On first run, a default config file is generated automatically:
 
+```toml
+# ~/.config/rtouch/config.toml
+
+# Whether shell completions should be enabled
+completions = true
+
+# Default logging behavior (override per-invocation with --log or --no-log)
+should-log = true
+
+# Custom log directory (optional; defaults to /var/log/R-touch on Unix, %LOCALAPPDATA%\R-touch\logs on Windows)
+# Can also be set via RTOUCH_LOG_DIR environment variable or --log-dir CLI flag
+# log-dir = "/path/to/custom/logs"
+
+[time-modify]
+# Also update access time when updating modification time with -m (default: false)
+atime-on-mtime = false
+
+# Also update modification time when updating access time with -a (default: false)
+mtime-on-atime = false
+```
 
 ---
 
@@ -182,19 +212,41 @@ cargo install rtouch
 #### Unix/Linux
 If you are on _Unix_ or _Unix-like_ (e.g. Linux, macOS) OS:
 ```bash
-chmod +x ./build/build_unix.sh
+chmod +x ./build/build-unix.sh
 ./build/build-unix.sh
 ```
 
 #### Windows
 If you are on Windows (user-level installation):
 ```powershell
-./build/build-user.ps1
+.\build\build-user.ps1
 ```
 And for machine-level Windows installation (makes the executable available to all users on the machine, recommended):
 ```powershell
-./build/build-system.ps1
+.\build\build-system.ps1
 ```
+
+---
+
+## Running Tests & Examples
+
+To run the full suite of unit tests, integration tests, and usage examples:
+
+### Unit & Integration Tests
+```bash
+cargo test
+```
+
+### End-to-End Usage & CLI Examples
+- **Unix / Linux / macOS (Bash)**:
+  ```bash
+  chmod +x ./test_all_examples.sh
+  ./test_all_examples.sh
+  ```
+- **Windows (PowerShell)**:
+  ```powershell
+  pwsh -ExecutionPolicy Bypass -File .\test_all_examples.ps1
+  ```
 
 ---
 
