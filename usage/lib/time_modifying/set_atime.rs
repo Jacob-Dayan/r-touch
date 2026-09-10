@@ -7,7 +7,7 @@
 use std::io;
 
 fn main() -> io::Result<()> {
-    // Ensure the file exists first.
+    // ensure file exists first
     let path = std::env::temp_dir().join("rtouch_usage_atime.txt");
     std::fs::write(&path, b"")?;
 
@@ -24,8 +24,7 @@ fn main() -> io::Result<()> {
 mod tests {
     use std::time::Duration;
 
-    /// After calling `set_access_time`, the file's atime must match the
-    /// requested value (within a 2-second tolerance for OS rounding).
+    /// after calling `set_access_time`, file's atime must match requested value
     #[test]
     fn atime_is_updated() {
         let path = std::env::temp_dir().join("rtouch_usage_set_atime.txt");

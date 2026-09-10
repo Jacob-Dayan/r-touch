@@ -15,7 +15,7 @@ fn main() -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    /// Both the file and its intermediate parent directories must exist.
+    /// both file and intermediate parent directories must exist
     #[test]
     fn creates_parents_and_file() {
         let dir = std::env::temp_dir().join("rtouch_usage_parents");

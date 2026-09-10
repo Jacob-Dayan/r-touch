@@ -15,12 +15,10 @@ use std::{
     time::SystemTime,
 };
 
-/// A logger bound to a specific log file path.
+/// logger bound to a specific log file path
 ///
-/// `LogCore` is constructed once (typically as a [`std::sync::LazyLock`] static)
-/// and reused for every subsequent write. The log-file path is therefore
-/// resolved only once — at the time the static is first accessed — rather than
-/// on every individual call.
+/// [`LogCore`] is constructed once (typically as a [`std::sync::LazyLock`] static)
+/// and reused for subsequent writes; log file path is resolved once at static access
 ///
 /// # Examples
 ///
@@ -40,23 +38,22 @@ pub struct LogCore {
 }
 
 impl LogCore {
-    /// Creates a new `LogCore` bound to `path`.
+    /// create a new [`LogCore`] bound to `path`
     ///
-    /// The path is stored as-is; parent directories are created on the first
-    /// [`log`](Self::log) call if they do not already exist.
+    /// path is stored as-is; parent directories are created on first
+    /// [`log`](Self::log) call if they do not already exist
     pub fn new(path: PathBuf) -> Self {
         Self { path }
     }
 
-    /// Appends a timestamped log entry to the bound file.
+    /// append a timestamped log entry to the bound file
     ///
-    /// If the parent directory of the log file does not exist, it is created
-    /// automatically (equivalent to `mkdir -p`).
+    /// creates parent directory automatically if missing (equivalent to `mkdir -p`)
     ///
     /// # Errors
     ///
-    /// Returns an [`std::io::Error`] if the directory cannot be created, the
-    /// file cannot be opened, or the write fails.
+    /// returns an [`std::io::Error`] if directory cannot be created, file cannot
+    /// be opened, or write fails
     pub fn log(&self, message: &fmt::Arguments) -> Result<()> {
         let path: &Path = &self.path;
 
@@ -64,9 +61,31 @@ impl LogCore {
             && !parent.as_os_str().is_empty()
         {
             fs::create_dir_all(parent)?;
+            #[cfg(target_family = "unix")]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                if let Ok(meta) = fs::metadata(parent) {
+                    let mut perms = meta.permissions();
+                    if perms.mode() & 0o777 != 0o755 {
+                        perms.set_mode(0o755);
+                        let _ = fs::set_permissions(parent, perms);
+                    }
+                }
+            }
         }
 
         let mut file = OpenOptions::new().create(true).append(true).open(path)?;
+        #[cfg(target_family = "unix")]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            if let Ok(meta) = file.metadata() {
+                let mut perms = meta.permissions();
+                if perms.mode() & 0o777 != 0o644 {
+                    perms.set_mode(0o644);
+                    let _ = file.set_permissions(perms);
+                }
+            }
+        }
         file.write_all(format!("{:?}: {}\n", SystemTime::now(), message).as_bytes())?;
         file.flush()
     }

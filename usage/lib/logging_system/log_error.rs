@@ -36,7 +36,7 @@ mod tests {
         (cfg, temp_dir)
     }
 
-    /// `error_log` must return `Ok(())` when the crash log directory is accessible.
+    /// [`rtouch::log::logmgr::error_log`] must return `Ok(())` when crash log directory is accessible
     #[test]
     fn error_log_returns_ok() {
         let (cfg, temp_dir) = test_config();

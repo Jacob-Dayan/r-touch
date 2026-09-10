@@ -35,7 +35,7 @@ mod tests {
         (cfg, temp_dir)
     }
 
-    /// `success_log` must return `Ok(())` when the log directory is accessible.
+    /// [`rtouch::log::logmgr::success_log`] must return `Ok(())` when log directory is accessible
     #[test]
     fn success_log_returns_ok() {
         let (cfg, temp_dir) = test_config();

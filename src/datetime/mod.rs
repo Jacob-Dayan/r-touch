@@ -11,19 +11,14 @@ use chrono::{Datelike, Local, Months, NaiveDate, NaiveDateTime, NaiveTime, TimeZ
 use std::fmt;
 use std::time::SystemTime;
 
-/// Error type returned by [`parse_time_expression`] when an input string
-/// cannot be converted to a [`std::time::SystemTime`].
-///
-/// Each variant carries a human-readable description of the problem.
+/// error type returned by [`parse_time_expression`] when an input string cannot be converted to a [`SystemTime`]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TimeParseError {
-    /// The string matched a known pattern but was structurally malformed
-    /// (e.g. wrong number of digits, missing separators).
+    /// string matched a known pattern but was structurally malformed (e.g. wrong number of digits, missing separators)
     InvalidFormat(String),
-    /// The string was structurally valid but contained an out-of-range value
-    /// (e.g. month 13, hour 25).
+    /// string was structurally valid but contained an out-of-range value (e.g. month 13, hour 25)
     InvalidValue(String),
-    /// The string did not match any supported format or keyword expression.
+    /// string did not match any supported format or keyword expression
     UnsupportedExpression(String),
 }
 
@@ -41,6 +36,7 @@ impl fmt::Display for TimeParseError {
 
 impl std::error::Error for TimeParseError {}
 
+/// parse human-readable date/time strings or standard formats into a [`SystemTime`]
 pub fn parse_time_expression(input: &str) -> Result<SystemTime, TimeParseError> {
     let trimmed = input.trim();
     if trimmed.is_empty() {
@@ -403,14 +399,18 @@ fn parse_time_of_day(time_str: &str) -> Result<NaiveTime, TimeParseError> {
         .parse::<u32>()
         .map_err(|_| TimeParseError::InvalidValue(format!("Invalid hour: {}", parts[0])))?;
     if hour > 23 {
-        return Err(TimeParseError::InvalidValue(format!("Invalid hour: {hour}")));
+        return Err(TimeParseError::InvalidValue(format!(
+            "Invalid hour: {hour}"
+        )));
     }
 
     let min = parts[1]
         .parse::<u32>()
         .map_err(|_| TimeParseError::InvalidValue(format!("Invalid minute: {}", parts[1])))?;
     if min > 59 {
-        return Err(TimeParseError::InvalidValue(format!("Invalid minute: {min}")));
+        return Err(TimeParseError::InvalidValue(format!(
+            "Invalid minute: {min}"
+        )));
     }
 
     let sec = if parts.len() == 3 {
@@ -600,7 +600,7 @@ mod tests {
         assert!(parse_time_expression("today 14:30").is_ok());
         assert!(parse_time_expression("today at 14:30").is_ok());
 
-        // Relative dates with time (yesterday HH:MM, tomorrow HH:MM, 1 week ago HH:MM, etc.)
+        // relative dates with time (yesterday HH:MM, tomorrow HH:MM, 1 week ago HH:MM, etc.)
         assert!(parse_time_expression("yesterday 14:30").is_ok());
         assert!(parse_time_expression("yesterday at 14:30:45").is_ok());
         assert!(parse_time_expression("tomorrow 09:15").is_ok());

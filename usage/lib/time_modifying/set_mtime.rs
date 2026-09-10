@@ -25,8 +25,7 @@ fn main() -> io::Result<()> {
 mod tests {
     use std::time::Duration;
 
-    /// After calling `set_modification_time`, the file's mtime must match
-    /// the requested value (within a 2-second tolerance).
+    /// after calling `set_modification_time`, file's mtime must match requested value
     #[test]
     fn mtime_is_updated() {
         let path = std::env::temp_dir().join("rtouch_usage_set_mtime.txt");
