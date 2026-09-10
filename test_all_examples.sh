@@ -25,12 +25,12 @@ cleanup() {
 }
 trap cleanup EXIT
 
-TEST_PROJECT_DIR="${BASE_TMP_DIR}/test_runner"
+TEST_PROJECT_DIR="${BASE_TMP_DIR}/test-runner"
 cargo new --bin "${TEST_PROJECT_DIR}" --quiet
 debug "finished setup"
 cd "${TEST_PROJECT_DIR}"
 
-debug "adding rtouch to dependencies"
+debug "adding R-touch to dependencies"
 
 cargo add rtouch --path "${PROJECT_ROOT}" --quiet || cargo add rtouch --quiet
 
