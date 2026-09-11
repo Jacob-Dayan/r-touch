@@ -544,9 +544,18 @@ mod tests {
         assert_eq!(cli_zsh.install_completion, Some(Some(Shell::Zsh)));
         assert!(cli_zsh.paths.is_empty());
 
+        let cli_pwsh = Cli::try_parse_from(["rtouch", "--completion=pwsh"]).unwrap();
+        assert_eq!(cli_pwsh.install_completion, Some(Some(Shell::Pwsh)));
+        assert!(cli_pwsh.paths.is_empty());
+
         let cli_gen = Cli::try_parse_from(["rtouch", "--generate-completion", "fish"]).unwrap();
         assert_eq!(cli_gen.generate_completion, Some(Shell::Fish));
         assert!(cli_gen.paths.is_empty());
+
+        let cli_gen_pwsh =
+            Cli::try_parse_from(["rtouch", "--generate-completion", "pwsh"]).unwrap();
+        assert_eq!(cli_gen_pwsh.generate_completion, Some(Shell::Pwsh));
+        assert!(cli_gen_pwsh.paths.is_empty());
     }
 
     #[test]

@@ -39,9 +39,10 @@ On your first run, `R-touch` will ask if you want shell completions installed. H
 # Auto-detect shell and install into standard user completion directory
 rtouch --install-completion
 
-# Explicit shell target (bash, zsh, fish, powershell, elvish)
+# Explicit shell target (bash, zsh, fish, powershell, pwsh, elvish)
 rtouch --completion zsh
 rtouch --completion fish
+rtouch --completion pwsh
 ```
 
 ---

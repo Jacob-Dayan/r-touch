@@ -161,11 +161,12 @@ You can also install or update completions anytime:
 # Auto-detect current shell and install completion file automatically
 rtouch --install-completion
 
-# Or specify a target shell (bash, zsh, fish, powershell, elvish)
+# Or specify a target shell (bash, zsh, fish, powershell, pwsh, elvish)
 rtouch --completion zsh
 rtouch --completion fish
+rtouch --completion pwsh
 ```
-*(Completions are automatically placed in standard user completion directories such as `~/.local/share/bash-completion/completions/rtouch` or `~/.config/fish/completions/rtouch.fish`).*
+*(Completions are automatically placed in standard user completion directories such as `~/.local/share/bash-completion/completions/rtouch`, `~/.config/fish/completions/rtouch.fish`, or PowerShell/WindowsPowerShell profile directories).*
 
 #### 8. Configuration File (`config.toml`)
 `rtouch` reads configuration from `~/.config/R-touch/config.toml` (or `%APPDATA%\R-touch\config.toml` on Windows). On first run, a default config file is generated automatically:

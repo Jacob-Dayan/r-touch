@@ -17,18 +17,74 @@
 //! using `clap_complete`, and install them into standard user configuration directories
 
 use clap::Command;
-pub use clap_complete::Shell;
+use fs_err as fs;
 use std::{
     io::{self, ErrorKind, Write},
     path::{Path, PathBuf},
 };
+
+/// supported shell targets for completion script generation and installation
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Hash, clap::ValueEnum)]
+#[value(rename_all = "lowercase")]
+pub enum Shell {
+    Bash,
+    Elvish,
+    Fish,
+    PowerShell,
+    #[value(alias = "pwsh7", alias = "pwsh-7")]
+    Pwsh,
+    Zsh,
+}
+
+impl Shell {
+    /// convert to [`clap_complete::Shell`]
+    #[must_use]
+    pub const fn to_clap_shell(self) -> clap_complete::Shell {
+        match self {
+            Self::Bash => clap_complete::Shell::Bash,
+            Self::Elvish => clap_complete::Shell::Elvish,
+            Self::Fish => clap_complete::Shell::Fish,
+            Self::PowerShell | Self::Pwsh => clap_complete::Shell::PowerShell,
+            Self::Zsh => clap_complete::Shell::Zsh,
+        }
+    }
+}
+
+impl From<Shell> for clap_complete::Shell {
+    fn from(shell: Shell) -> Self {
+        shell.to_clap_shell()
+    }
+}
+
+impl clap_complete::Generator for Shell {
+    fn file_name(&self, name: &str) -> String {
+        self.to_clap_shell().file_name(name)
+    }
+
+    fn generate(&self, cmd: &Command, buf: &mut dyn Write) {
+        self.to_clap_shell().generate(cmd, buf)
+    }
+}
+
+impl std::fmt::Display for Shell {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Bash => write!(f, "bash"),
+            Self::Elvish => write!(f, "elvish"),
+            Self::Fish => write!(f, "fish"),
+            Self::PowerShell => write!(f, "powershell"),
+            Self::Pwsh => write!(f, "pwsh"),
+            Self::Zsh => write!(f, "zsh"),
+        }
+    }
+}
 
 /// binary name used when generating shell completion definitions
 pub const BIN_NAME: &str = "rtouch";
 
 /// inspect environment to determine active shell
 ///
-/// checks `$SHELL` on Unix (extracting binary name like `bash`, `zsh`, `fish`, `elvish`)
+/// checks `$SHELL` on Unix (extracting binary name like `bash`, `zsh`, `fish`, `elvish`, `pwsh`)
 /// or standard PowerShell environment indicators on Windows
 ///
 /// # Returns
@@ -54,6 +110,8 @@ pub fn detect_shell() -> Option<Shell> {
                 "zsh" => return Some(Shell::Zsh),
                 "fish" => return Some(Shell::Fish),
                 "elvish" => return Some(Shell::Elvish),
+                "pwsh" => return Some(Shell::Pwsh),
+                "powershell" => return Some(Shell::PowerShell),
                 _ => {}
             }
         }
@@ -61,7 +119,20 @@ pub fn detect_shell() -> Option<Shell> {
 
     #[cfg(target_family = "windows")]
     {
-        if std::env::var_os("PSModulePath").is_some() {
+        if let Ok(ps_module_path) = std::env::var("PSModulePath") {
+            let is_pwsh = std::env::var_os("POWERSHELL_DISTRIBUTION_CHANNEL").is_some()
+                || ps_module_path.split(';').any(|seg| {
+                    let seg_lower = seg.to_lowercase();
+                    seg_lower.contains(r"\powershell\7")
+                        || seg_lower.contains(r"/powershell/7")
+                        || (seg_lower.contains(r"\powershell\modules")
+                            && !seg_lower.contains(r"windowspowershell"))
+                        || (seg_lower.contains(r"/powershell/modules")
+                            && !seg_lower.contains(r"windowspowershell"))
+                });
+            if is_pwsh {
+                return Some(Shell::Pwsh);
+            }
             return Some(Shell::PowerShell);
         }
     }
@@ -77,7 +148,8 @@ pub fn detect_shell() -> Option<Shell> {
 /// - **Bash**: `~/.local/share/bash-completion/completions/rtouch`
 /// - **Fish**: `~/.config/fish/completions/rtouch.fish`
 /// - **Zsh**: `~/.zsh/completions/_rtouch` & `~/.local/share/zsh/site-functions/_rtouch`
-/// - **PowerShell**: Windows PowerShell documents or `~/.config/powershell/`
+/// - **PowerShell**: Windows PowerShell documents, PowerShell Core documents, or `~/.config/powershell/`
+/// - **PowerShell Core (pwsh)**: `~/Documents/PowerShell/` on Windows or `~/.config/powershell/` on Unix
 /// - **Elvish**: `~/.elvish/lib/rtouch.elv`
 ///
 /// # Errors
@@ -87,23 +159,23 @@ fn resolve_target_paths(home: &Path, shell: Shell) -> io::Result<Vec<PathBuf>> {
     match shell {
         Shell::Bash => {
             let dir = home.join(".local/share/bash-completion/completions");
-            fs_err::create_dir_all(&dir)?;
+            fs::create_dir_all(&dir)?;
             Ok(vec![dir.join(BIN_NAME)])
         }
         Shell::Fish => {
             let dir = home.join(".config/fish/completions");
-            fs_err::create_dir_all(&dir)?;
+            fs::create_dir_all(&dir)?;
             Ok(vec![dir.join(format!("{BIN_NAME}.fish"))])
         }
         Shell::Zsh => {
             let mut paths = Vec::with_capacity(2);
             let dir1 = home.join(".zsh/completions");
-            if fs_err::create_dir_all(&dir1).is_ok() {
+            if fs::create_dir_all(&dir1).is_ok() {
                 paths.push(dir1.join(format!("_{BIN_NAME}")));
             }
 
             let dir2 = home.join(".local/share/zsh/site-functions");
-            if fs_err::create_dir_all(&dir2).is_ok() {
+            if fs::create_dir_all(&dir2).is_ok() {
                 paths.push(dir2.join(format!("_{BIN_NAME}")));
             }
 
@@ -115,21 +187,40 @@ fn resolve_target_paths(home: &Path, shell: Shell) -> io::Result<Vec<PathBuf>> {
         }
         Shell::PowerShell => {
             #[cfg(target_family = "windows")]
-            let dir = home.join("Documents/WindowsPowerShell");
+            {
+                let mut paths = Vec::with_capacity(2);
+                let win_ps = home.join("Documents/WindowsPowerShell");
+                if fs::create_dir_all(&win_ps).is_ok() {
+                    paths.push(win_ps.join(format!("{BIN_NAME}_completion.ps1")));
+                }
+                let pwsh = home.join("Documents/PowerShell");
+                if fs::create_dir_all(&pwsh).is_ok() {
+                    paths.push(pwsh.join(format!("{BIN_NAME}_completion.ps1")));
+                }
+                if paths.is_empty() {
+                    paths.push(win_ps.join(format!("{BIN_NAME}_completion.ps1")));
+                }
+                Ok(paths)
+            }
+            #[cfg(not(target_family = "windows"))]
+            {
+                let dir = home.join(".config/powershell");
+                fs::create_dir_all(&dir)?;
+                Ok(vec![dir.join(format!("{BIN_NAME}_completion.ps1"))])
+            }
+        }
+        Shell::Pwsh => {
+            #[cfg(target_family = "windows")]
+            let dir = home.join("Documents/PowerShell");
             #[cfg(not(target_family = "windows"))]
             let dir = home.join(".config/powershell");
-            fs_err::create_dir_all(&dir)?;
+            fs::create_dir_all(&dir)?;
             Ok(vec![dir.join(format!("{BIN_NAME}_completion.ps1"))])
         }
         Shell::Elvish => {
             let dir = home.join(".elvish/lib");
-            fs_err::create_dir_all(&dir)?;
+            fs::create_dir_all(&dir)?;
             Ok(vec![dir.join(format!("{BIN_NAME}.elv"))])
-        }
-        _ => {
-            let dir = home.join(".local/share/completions");
-            fs_err::create_dir_all(&dir)?;
-            Ok(vec![dir.join(format!("{BIN_NAME}.{shell}"))])
         }
     }
 }
@@ -155,7 +246,7 @@ pub fn install_completion(mut cmd: Command, shell_opt: Option<Shell>) -> io::Res
         None => {
             eprintln!(
                 "Could not automatically detect your active shell.\n\
-                 Please specify your shell explicitly: rtouch --install-completion <bash|zsh|fish|powershell|elvish>"
+                 Please specify your shell explicitly: rtouch --install-completion <bash|zsh|fish|powershell|pwsh|elvish>"
             );
             return Err(io::Error::new(
                 ErrorKind::InvalidInput,
@@ -174,7 +265,7 @@ pub fn install_completion(mut cmd: Command, shell_opt: Option<Shell>) -> io::Res
 
     let mut successfully_written = Vec::new();
     for target in target_paths {
-        if fs_err::write(&target, &buf).is_ok() {
+        if fs::write(&target, &buf).is_ok() {
             successfully_written.push(target);
         }
     }
@@ -255,6 +346,16 @@ mod tests {
     }
 
     #[test]
+    fn test_generate_completion_pwsh() {
+        let cmd = Command::new("rtouch");
+        let mut buf = Vec::new();
+        generate_completion(cmd.clone(), Shell::Pwsh, &mut buf);
+        let output = String::from_utf8(buf).expect("valid utf-8 output");
+        assert!(output.contains("rtouch"));
+        assert!(output.contains("Register-ArgumentCompleter"));
+    }
+
+    #[test]
     fn test_resolve_target_paths_all_shells() {
         let temp_home = std::env::temp_dir().join("rtouch_test_home");
         let shells = [
@@ -262,24 +363,25 @@ mod tests {
             Shell::Zsh,
             Shell::Fish,
             Shell::PowerShell,
+            Shell::Pwsh,
             Shell::Elvish,
         ];
         for shell in shells {
             let paths = resolve_target_paths(&temp_home, shell).unwrap();
             assert!(!paths.is_empty(), "Paths should not be empty for {shell}");
         }
-        let _ = fs_err::remove_dir_all(&temp_home);
+        let _ = fs::remove_dir_all(&temp_home);
     }
 
     #[test]
     fn test_are_completions_installed() {
         let temp_home = std::env::temp_dir().join("rtouch_test_installed_check");
-        let _ = fs_err::remove_dir_all(&temp_home);
+        let _ = fs::remove_dir_all(&temp_home);
         let paths = resolve_target_paths(&temp_home, Shell::Bash).unwrap();
         assert!(!paths.iter().any(|p| p.exists()));
 
-        fs_err::write(&paths[0], b"mock completion").unwrap();
+        fs::write(&paths[0], b"mock completion").unwrap();
         assert!(paths.iter().any(|p| p.exists()));
-        let _ = fs_err::remove_dir_all(&temp_home);
+        let _ = fs::remove_dir_all(&temp_home);
     }
 }
