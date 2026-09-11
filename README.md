@@ -46,7 +46,7 @@ Unlike the classic `touch` that silently fails or acts weirdly when encountering
 
 ---
 
-> 🚀 **Quick Start**: Check out [QUICK-START.md](QUICK-START.md) for a rapid 5-minute walkthrough of commands, logging options, and configuration examples.
+> **Quick Start**: Check out [QUICK-START.md](QUICK-START.md) for a rapid 5-minute walkthrough of commands, logging options, and configuration examples.
 
 ---
 
