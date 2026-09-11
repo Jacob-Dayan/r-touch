@@ -124,7 +124,7 @@ pub mod log {
 }
 pub mod replace_dir;
 
-pub use conf::{AppConfig, TimeModifyConfig};
+pub use conf::{AppConfig, TimeModifyConfig, APP_NAME};
 pub use replace_dir::ReplResult;
 
 /// core file creation and timestamp management logic

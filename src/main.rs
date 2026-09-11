@@ -29,7 +29,7 @@ use std::{
 #[derive(Parser, Debug)]
 #[command(
     name = "R-touch",
-    version = "1.5.2, Pre-Release",
+    version = "1.6.0",
     about = "A custom touch implementation, written in Rust"
 )]
 pub struct Cli {
@@ -133,7 +133,7 @@ fn normalize_cli_args(args: impl IntoIterator<Item = OsString>) -> Vec<OsString>
         .collect()
 }
 
-/// run rtouch operations for all specified paths
+/// run R-touch operations for all specified paths
 pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
     let cli = Cli::parse_from(normalize_cli_args(std::env::args_os()));
 
@@ -206,13 +206,7 @@ pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
         config.should_log
     };
 
-    let (mut atime, mut mtime) = (cli.atime, cli.mtime);
-    if atime && !mtime && config.time_modify.mtime_on_atime {
-        mtime = true;
-    }
-    if mtime && !atime && config.time_modify.atime_on_mtime {
-        atime = true;
-    }
+    let (atime, mtime) = config.time_modify.resolve_flags(cli.atime, cli.mtime);
 
     let touch_args = TouchArgs {
         paths,
@@ -573,13 +567,11 @@ mod tests {
 
     #[test]
     fn test_cli_parsing_log_dir_flag() {
-        let cli =
-            Cli::try_parse_from(["rtouch", "--log-dir", "/custom/logs", "file.txt"]).unwrap();
+        let cli = Cli::try_parse_from(["rtouch", "--log-dir", "/custom/logs", "file.txt"]).unwrap();
         assert_eq!(cli.paths, vec!["file.txt"]);
         assert_eq!(cli.log_dir, Some(PathBuf::from("/custom/logs")));
 
-        let cli2 =
-            Cli::try_parse_from(["rtouch", "--log-dir=/another/path", "file.txt"]).unwrap();
+        let cli2 = Cli::try_parse_from(["rtouch", "--log-dir=/another/path", "file.txt"]).unwrap();
         assert_eq!(cli2.log_dir, Some(PathBuf::from("/another/path")));
     }
 

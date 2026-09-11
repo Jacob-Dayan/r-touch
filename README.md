@@ -168,10 +168,10 @@ rtouch --completion fish
 *(Completions are automatically placed in standard user completion directories such as `~/.local/share/bash-completion/completions/rtouch` or `~/.config/fish/completions/rtouch.fish`).*
 
 #### 8. Configuration File (`config.toml`)
-`rtouch` reads configuration from `~/.config/rtouch/config.toml` (or `%APPDATA%\rtouch\config.toml` on Windows). On first run, a default config file is generated automatically:
+`rtouch` reads configuration from `~/.config/R-touch/config.toml` (or `%APPDATA%\R-touch\config.toml` on Windows). On first run, a default config file is generated automatically:
 
 ```toml
-# ~/.config/rtouch/config.toml
+# ~/.config/R-touch/config.toml
 
 # Whether shell completions should be enabled
 completions = true
@@ -180,7 +180,7 @@ completions = true
 should-log = true
 
 # Custom log directory (optional; defaults to /var/log/R-touch on Unix, %LOCALAPPDATA%\R-touch\logs on Windows)
-# Can also be set via RTOUCH_LOG_DIR environment variable or --log-dir CLI flag
+# Can also be set via R_TOUCH_LOG_DIR (or RTOUCH_LOG_DIR) environment variable or --log-dir CLI flag
 # log-dir = "/path/to/custom/logs"
 
 [time-modify]

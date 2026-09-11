@@ -1,0 +1,11 @@
+# configuration with custom audit log directory
+
+completions = true
+should-log = true
+
+# store all success, error, and timestamp audit logs in a custom user directory
+log-dir = "/var/log/R-touch_custom"
+
+[time-modify]
+atime-on-mtime = false
+mtime-on-atime = false

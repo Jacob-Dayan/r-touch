@@ -1,0 +1,9 @@
+# configuration optimized for headless continuous integration (CI) and automated scripts
+# disables interactive completion suggestions and suppresses persistent audit logging
+
+completions = false
+should-log = false
+
+[time-modify]
+atime-on-mtime = false
+mtime-on-atime = false
