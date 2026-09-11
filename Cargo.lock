@@ -380,7 +380,7 @@ dependencies = [
 
 [[package]]
 name = "rtouch"
-version = "1.5.2"
+version = "1.6.0"
 dependencies = [
  "chrono",
  "clap",

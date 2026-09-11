@@ -1,0 +1,12 @@
+# configuration with symmetric timestamp synchronization
+# updating either access time (-a) or modification time (-m) synchronizes both timestamps
+
+completions = true
+should-log = true
+
+[time-modify]
+# updating modification time with -m also updates access time
+atime-on-mtime = true
+
+# updating access time with -a also updates modification time
+mtime-on-atime = true

@@ -134,7 +134,7 @@ rtouch -rf existing_folder
 You can customize the log directory with any of the following methods (in order of priority):
 1. **CLI Flag**: `rtouch --log-dir /path/to/my/logs file.txt`
 2. **Config file**: `log-dir = "/path/to/my/logs"` in `config.toml`
-3. **Environment variable**: `export RTOUCH_LOG_DIR="/path/to/my/logs"`
+3. **Environment variable**: `export R_TOUCH_LOG_DIR="/path/to/my/logs"` (or `RTOUCH_LOG_DIR`)
 
 ### Controlling Logging
 - Disable logging for an invocation: `rtouch --no-log file.txt`
@@ -145,8 +145,8 @@ You can customize the log directory with any of the following methods (in order 
 ## 4. Configuration File (`config.toml`)
 
 `R-touch` stores its configuration in:
-- **Unix**: `~/.config/rtouch/config.toml`
-- **Windows**: `%APPDATA%\rtouch\config.toml`
+- **Unix**: `~/.config/R-touch/config.toml`
+- **Windows**: `%APPDATA%\R-touch\config.toml`
 
 ### Example `config.toml`
 ```toml
@@ -157,7 +157,7 @@ completions = true
 should-log = true
 
 # Optional custom log directory
-# log-dir = "/home/user/logs/rtouch"
+# log-dir = "/home/user/logs/R-touch"
 
 [time-modify]
 # If true, updating access time (-a) will also update modification time

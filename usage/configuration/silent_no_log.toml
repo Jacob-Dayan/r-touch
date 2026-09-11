@@ -1,0 +1,9 @@
+# configuration with audit logging disabled
+# disables logging to avoid disk I/O overhead or permissions issues
+
+completions = true
+should-log = false
+
+[time-modify]
+atime-on-mtime = false
+mtime-on-atime = false

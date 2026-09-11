@@ -1,0 +1,18 @@
+# default R-touch configuration file
+# placed at ~/.config/R-touch/config.toml (Unix) or %APPDATA%\R-touch\config.toml (Windows)
+
+# whether shell completion prompt is shown on startup
+completions = true
+
+# whether operations are logged to audit files by default
+should-log = true
+
+# custom directory for audit log files (uncomment to override default /var/log/R-touch)
+# log-dir = "/var/log/R-touch"
+
+[time-modify]
+# update access time when modification time is updated with -m
+atime-on-mtime = false
+
+# update modification time when access time is updated with -a
+mtime-on-atime = false
