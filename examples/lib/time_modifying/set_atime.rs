@@ -8,7 +8,7 @@ use std::io;
 
 fn main() -> io::Result<()> {
     // ensure file exists first
-    let path = std::env::temp_dir().join("rtouch_usage_atime.txt");
+    let path = std::env::temp_dir().join("rtouch_example_atime.txt");
     std::fs::write(&path, b"")?;
 
     let one_hour_ago = rtouch::datetime::parse_time_expression("1 hour ago")
@@ -27,7 +27,7 @@ mod tests {
     /// after calling `set_access_time`, file's atime must match requested value
     #[test]
     fn atime_is_updated() {
-        let path = std::env::temp_dir().join("rtouch_usage_set_atime.txt");
+        let path = std::env::temp_dir().join("rtouch_example_set_atime.txt");
         std::fs::write(&path, b"").unwrap();
 
         let target = rtouch::datetime::parse_time_expression("2 hours ago").unwrap();

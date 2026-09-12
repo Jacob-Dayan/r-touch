@@ -4,14 +4,14 @@ set -euo pipefail
 
 BASE_TMP_DIR="/tmp/test_all"
 PROJECT_ROOT="$(pwd)"
-USAGE_DIR="${PROJECT_ROOT}/usage/lib"
+EXAMPLES_DIR="${PROJECT_ROOT}/examples/lib"
 
 debug() {
     echo "DEBUG: $1"
 }
 
-if [ ! -d "${USAGE_DIR}" ]; then
-    echo "Error: Directory ${USAGE_DIR} does not exist."
+if [ ! -d "${EXAMPLES_DIR}" ]; then
+    echo "Error: Directory ${EXAMPLES_DIR} does not exist."
     exit 1
 fi
 
@@ -35,7 +35,7 @@ debug "adding R-touch to dependencies"
 cargo add rtouch --path "${PROJECT_ROOT}" --quiet || cargo add rtouch --quiet
 
 printf "DONE.\nStarting tests...\n\n"
-find "${USAGE_DIR}" -type f -name "*.rs" | while read -r file_path; do
+find "${EXAMPLES_DIR}" -type f -name "*.rs" | while read -r file_path; do
     filename=$(basename "${file_path}")
 
 echo "=============================================================================================="
@@ -50,7 +50,7 @@ echo "==========================================================================
     echo -e "Test for ${filename} passed successfully!\n"
 done
 
-find "${PROJECT_ROOT}/usage/cli" -type f -name "*.sh" | while read -r file_path; do
+find "${PROJECT_ROOT}/examples/cli" -type f -name "*.sh" | while read -r file_path; do
     filename=$(basename "${file_path}")
 
 echo "==============================================================================================="

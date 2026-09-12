@@ -17,7 +17,7 @@ use std::io;
 
 fn main() -> io::Result<()> {
     // when called on a plain file (or new path), result is NotRequired
-    let path = std::env::temp_dir().join("rtouch_usage_repl_main.txt");
+    let path = std::env::temp_dir().join("rtouch_example_repl_main.txt");
     let result = rtouch::touch(&path, false, None, false, false)?;
     match result {
         rtouch::ReplResult::Completed => println!("Directory replaced."),
@@ -35,7 +35,7 @@ mod tests {
     /// touching a normal (non-directory) path always returns `NotRequired`
     #[test]
     fn non_directory_returns_not_required() {
-        let path = std::env::temp_dir().join("rtouch_usage_repl_t1.txt");
+        let path = std::env::temp_dir().join("rtouch_example_repl_t1.txt");
         let _ = std::fs::remove_file(&path);
 
         let result = rtouch::touch(&path, false, None, false, false).unwrap();

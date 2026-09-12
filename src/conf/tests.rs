@@ -194,9 +194,9 @@ fn test_app_config_associated_methods() {
 }
 
 #[test]
-fn test_usage_configuration_examples_parse_valid() {
+fn test_configuration_examples_parse_valid() {
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let config_examples_dir = manifest_dir.join("usage").join("configuration");
+    let config_examples_dir = manifest_dir.join("examples").join("configuration");
     assert!(config_examples_dir.is_dir());
 
     let entries = fs::read_dir(&config_examples_dir).unwrap();

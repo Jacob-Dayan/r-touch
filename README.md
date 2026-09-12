@@ -229,15 +229,15 @@ And for machine-level Windows installation (makes the executable available to al
 ---
 
 ## Running Tests & Examples
-
-To run the full suite of unit tests, integration tests, and usage examples:
-
+ 
+To run the full suite of unit tests, integration tests, and examples:
+ 
 ### Unit & Integration Tests
 ```bash
 cargo test
 ```
-
-### End-to-End Usage & CLI Examples
+ 
+### End-to-End CLI & Library Examples
 - **Unix / Linux / macOS (Bash)**:
   ```bash
   chmod +x ./test_all_examples.sh
@@ -247,13 +247,7 @@ cargo test
   ```powershell
   pwsh -ExecutionPolicy Bypass -File .\test_all_examples.ps1
   ```
-
----
-
-## Benchmarking
-
-You can find the benchmarking results and get more information about the benchmarking process in the [benchmarks directory](https://github.com/Jacob-Dayan/r-touch/tree/main/Benchmarks).
-
+ 
 ---
 
 ## Compatibility

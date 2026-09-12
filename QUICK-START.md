@@ -172,7 +172,7 @@ atime-on-mtime = false
 
 ## 5. Running the Test Suite
 
-Both Bash and PowerShell test suites are provided to validate all usage examples and CLI commands end-to-end:
+Both Bash and PowerShell test suites are provided to validate all library and CLI examples end-to-end:
 
 ### Unix / Linux / macOS (Bash)
 ```bash

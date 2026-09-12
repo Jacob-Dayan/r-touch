@@ -14,7 +14,7 @@ To apply one of these configurations, copy the desired file to your system's con
 ```bash
 # Example for Linux/macOS
 mkdir -p ~/.config/R-touch
-cp usage/configuration/default.toml ~/.config/R-touch/config.toml
+cp examples/configuration/default.toml ~/.config/R-touch/config.toml
 ```
 
 ## Available Profiles

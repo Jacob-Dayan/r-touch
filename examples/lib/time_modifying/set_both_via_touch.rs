@@ -7,7 +7,7 @@
 use std::io;
 
 fn main() -> io::Result<()> {
-    let path = std::env::temp_dir().join("rtouch_usage_both_times.txt");
+    let path = std::env::temp_dir().join("rtouch_example_both_times.txt");
     std::fs::write(&path, b"")?;
 
     let target = rtouch::datetime::parse_time_expression("2 days ago")
@@ -27,7 +27,7 @@ mod tests {
     /// both atime and mtime must reflect requested time
     #[test]
     fn both_timestamps_updated() {
-        let path = std::env::temp_dir().join("rtouch_usage_both_times_t1.txt");
+        let path = std::env::temp_dir().join("rtouch_example_both_times_t1.txt");
         std::fs::write(&path, b"").unwrap();
 
         let target = rtouch::datetime::parse_time_expression("2 days ago").unwrap();
@@ -49,7 +49,7 @@ mod tests {
     /// passing `atime=true` and `mtime=true` simultaneously also updates both
     #[test]
     fn explicit_both_flags_same_result() {
-        let path = std::env::temp_dir().join("rtouch_usage_both_times_t2.txt");
+        let path = std::env::temp_dir().join("rtouch_example_both_times_t2.txt");
         std::fs::write(&path, b"").unwrap();
 
         let target = rtouch::datetime::parse_time_expression("1 hour ago").unwrap();

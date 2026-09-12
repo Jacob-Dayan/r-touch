@@ -13,7 +13,7 @@ fn touch_with_expr(path: &str, expr: &str) -> io::Result<rtouch::ReplResult> {
 }
 
 fn main() -> io::Result<()> {
-    let path = std::env::temp_dir().join("rtouch_usage_relative.txt");
+    let path = std::env::temp_dir().join("rtouch_example_relative.txt");
     touch_with_expr(path.to_str().unwrap(), "yesterday")?;
     println!("Touched with 'yesterday': {}", path.display());
     std::fs::remove_file(&path)?;
@@ -28,7 +28,7 @@ mod tests {
     /// file's atime should be approximately 24 h in the past
     #[test]
     fn yesterday_sets_atime_to_24h_ago() {
-        let path = std::env::temp_dir().join("rtouch_usage_relative_t1.txt");
+        let path = std::env::temp_dir().join("rtouch_example_relative_t1.txt");
         let _ = std::fs::remove_file(&path);
 
         touch_with_expr(path.to_str().unwrap(), "yesterday").unwrap();

@@ -51,7 +51,7 @@ mod tests {
     /// stored atime must match `yesterday` within 5 s after update
     #[test]
     fn atime_matches_yesterday() {
-        let path = std::env::temp_dir().join("rtouch_usage_update_atime.txt");
+        let path = std::env::temp_dir().join("rtouch_example_update_atime.txt");
         std::fs::write(&path, b"").unwrap();
 
         set_access_time_of_file(path.to_str().unwrap(), "yesterday").unwrap();

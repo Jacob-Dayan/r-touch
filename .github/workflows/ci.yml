@@ -219,9 +219,9 @@ jobs:
       - name: Make test scripts executable
         run: |
           chmod +x ./test_all_examples.sh
-          chmod +x ./usage/cli/*.sh
+          chmod +x ./examples/cli/*.sh
 
-      - name: Run all usage and CLI integration test scenarios
+      - name: Run all examples and CLI integration test scenarios
         run: ./test_all_examples.sh
 
   test-linter-quality:

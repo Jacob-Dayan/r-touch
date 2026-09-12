@@ -6,7 +6,7 @@
 use std::io;
 
 fn main() -> io::Result<()> {
-    let path = std::env::temp_dir().join("rtouch_usage_mtime.txt");
+    let path = std::env::temp_dir().join("rtouch_example_mtime.txt");
     std::fs::write(&path, b"")?;
 
     let three_days_ago = rtouch::datetime::parse_time_expression("3 days ago")
@@ -28,7 +28,7 @@ mod tests {
     /// after calling `set_modification_time`, file's mtime must match requested value
     #[test]
     fn mtime_is_updated() {
-        let path = std::env::temp_dir().join("rtouch_usage_set_mtime.txt");
+        let path = std::env::temp_dir().join("rtouch_example_set_mtime.txt");
         std::fs::write(&path, b"").unwrap();
 
         let target = rtouch::datetime::parse_time_expression("3 days ago").unwrap();

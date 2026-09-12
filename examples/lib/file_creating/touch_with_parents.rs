@@ -18,7 +18,7 @@ mod tests {
     /// both file and intermediate parent directories must exist
     #[test]
     fn creates_parents_and_file() {
-        let dir = std::env::temp_dir().join("rtouch_usage_parents");
+        let dir = std::env::temp_dir().join("rtouch_example_parents");
         let path = dir.join("a/b/c/file.txt");
         let _ = std::fs::remove_dir_all(&dir);
 
