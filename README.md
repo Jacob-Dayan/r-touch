@@ -8,8 +8,7 @@
 The drop-in replacement that has its own date time parser as a library in [crates.io](https://crates.io/crates/rtouch), independently logs successes, failures, and time-modifications that we all've been waiting for, because it's well known that [`touch`](https://www.gnu.org/software/coreutils/touch) is the only tool separating us from world peace, and ruining our workflows! oh c'mon now, we all know you wanted a Rust-written improvement for the [`GNU touch`](https://www.gnu.org/software/coreutils/touch)...
 
 ## Why did I even create R-touch?
-no, no one needs a cross-platform, shortcuts mkdir -p, finishes tasks in 0.001 seconds less, that logs every action replacement for GNU touch.
-But then I thought about it:
+I thought about it:
 
 Problem:
 
@@ -23,7 +22,7 @@ touch file.txt
 ```
 Jacob Dayan (R-touch founder & developer):
 
-"Interesting. But what if we built a cross-platform Rust implementation with a custom date parser, audit logging, directory handling, multiple licensing models, benchmarking, and a reusable library?"
+"Interesting. But what if we built a cross-platform Rust implementation with a custom date parser, audit logging, directory handling, customizable & configurable with toml, multiple licensing models, benchmarking, and a reusable library?"
 
 then I started working on R-touch as a main project. Well, it was actually my first project, that's why you can see commits like "Removed Cargo.lock; unnecessary file - it's being created automatically" from the early days.
 
