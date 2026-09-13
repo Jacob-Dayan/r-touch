@@ -118,19 +118,15 @@ rtouch -rf existing_folder
 `R-touch` automatically records an audit log of created files, timestamp modifications, and errors:
 
 ### Default Log Locations
-- **Linux / Unix**: `/var/log/R-touch/`
-  - Success log: `/var/log/R-touch/r-touch.log`
-  - Crashes & errors: `/var/log/R-touch/crashes/file_creations.log`
-  - Access time updates: `/var/log/R-touch/time_modifications/atime_modification.log`
-  - Modification time updates: `/var/log/R-touch/time_modifications/mtime_modification.log`
+- **Linux / Unix (User-level, XDG Standard)**: `~/.local/state/R-touch/` (or `$XDG_STATE_HOME/R-touch/`)
+  - Success log: `~/.local/state/R-touch/r-touch.log`
+  - Crashes & errors: `~/.local/state/R-touch/crashes/file_creations.log`
+  - Access time updates: `~/.local/state/R-touch/time_modifications/atime_modification.log`
+  - Modification time updates: `~/.local/state/R-touch/time_modifications/mtime_modification.log`
+- **Linux / Unix (Root, UID 0)**: `/var/log/R-touch/`
 - **Windows**: `%LOCALAPPDATA%\R-touch\logs\`
 
-> [!NOTE]
-> On Unix systems, `/var/log` requires root privileges to create new top-level directories. To initialize user-level access, run the setup script:
-> ```bash
-> chmod +x ./scripts/grant-logging-permissions.sh
-> ./scripts/grant-logging-permissions.sh
-> ```
+Logs are automatically created in your user state directory with private permissions without requiring root privileges or external setup scripts.
 
 ### Custom Log Directories
 You can customize the log directory with any of the following methods (in order of priority):

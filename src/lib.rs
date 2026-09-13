@@ -80,12 +80,25 @@ impl LogConfig {
         };
 
         #[cfg(target_family = "unix")]
-        let log_dir = PathBuf::from("/var/log").join(app_str);
+        let log_dir = {
+            let is_root = unsafe { libc::getuid() == 0 };
+            if is_root {
+                PathBuf::from("/var/log").join(app_str)
+            } else if let Some(val) = std::env::var_os("XDG_STATE_HOME").filter(|s| !s.is_empty()) {
+                PathBuf::from(val).join(app_str)
+            } else if let Some(home) =
+                dirs_next::home_dir().or_else(|| std::env::var_os("HOME").map(PathBuf::from))
+            {
+                home.join(".local").join("state").join(app_str)
+            } else {
+                PathBuf::from("/tmp").join(app_str).join("logs")
+            }
+        };
 
         Self::from_log_dir(log_dir)
     }
 
-    /// ensure log dirs and files have standard permissions (0o755 / 0o644)
+    /// ensure log dirs and files have standard permissions
     pub fn ensure_permissions(&self) {
         #[cfg(target_family = "unix")]
         {
@@ -101,8 +114,13 @@ impl LogConfig {
                     let _ = fs::create_dir_all(parent);
                     if let Ok(meta) = fs::metadata(parent) {
                         let mut perms = meta.permissions();
-                        if perms.mode() & 0o777 != 0o755 {
-                            perms.set_mode(0o755);
+                        let target_mode = if unsafe { libc::getuid() == 0 } {
+                            0o755
+                        } else {
+                            0o700
+                        };
+                        if perms.mode() & 0o777 != target_mode {
+                            perms.set_mode(target_mode);
                             let _ = fs::set_permissions(parent, perms);
                         }
                     }
@@ -111,8 +129,13 @@ impl LogConfig {
                     && let Ok(meta) = fs::metadata(path)
                 {
                     let mut perms = meta.permissions();
-                    if perms.mode() & 0o777 != 0o644 {
-                        perms.set_mode(0o644);
+                    let target_mode = if unsafe { libc::getuid() == 0 } {
+                        0o644
+                    } else {
+                        0o600
+                    };
+                    if perms.mode() & 0o777 != target_mode {
+                        perms.set_mode(target_mode);
                         let _ = fs::set_permissions(path, perms);
                     }
                 }

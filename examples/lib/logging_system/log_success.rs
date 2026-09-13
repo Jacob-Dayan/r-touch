@@ -3,7 +3,7 @@
 //! [`rtouch::log::logmgr::success_log`] appends an entry to the general
 //! success log file located at:
 //!
-//! - **Linux/macOS**: `/var/log/R-touch/r-touch.log`
+//! - **Linux/macOS**: `~/.local/state/R-touch/r-touch.log` (or `/var/log/R-touch/r-touch.log` for root)
 //! - **Windows**: `%LOCALAPPDATA%\R-touch\logs\r-touch.log`
 //!
 //! Each entry is timestamped automatically by [`rtouch::log::log_core::LogCore`].
@@ -49,7 +49,7 @@ mod tests {
     fn from_env_defaults_has_expected_paths() {
         let cfg = rtouch::LogConfig::from_env_defaults_for("R-touch");
         #[cfg(target_family = "unix")]
-        assert_eq!(cfg.success_log, PathBuf::from("/var/log/R-touch/r-touch.log"));
+        assert!(cfg.success_log.ends_with("r-touch.log"));
         #[cfg(target_family = "windows")]
         assert!(cfg.success_log.ends_with(r"R-touch\logs\r-touch.log"));
     }

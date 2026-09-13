@@ -387,6 +387,7 @@ dependencies = [
  "clap_complete",
  "dirs-next",
  "fs-err",
+ "libc",
  "serde",
  "toml",
 ]

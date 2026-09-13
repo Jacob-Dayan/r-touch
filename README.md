@@ -40,7 +40,7 @@ Unlike the classic `touch` that silently fails or acts weirdly when encountering
 * **Flexible Date & Time Interpreter:** Supports ISO 8601, RFC 2822/3339, GNU touch syntax (`[[CC]YY]MMDDhhmm[.ss]`), and human expressions like `now`, `yesterday`, `tomorrow`, `2 days ago`, `+3 hours`, `-15 minutes`, `next tuesday`, and `today 14:30` — with clear and helpful error diagnostics if an invalid date is provided.
 * **Smart Directory Handling:** If you try to create a file where a directory already exists, `R-touch` stops and asks you what to do instead of blowing up.
 * **Parent Directory Creation (`-p` / `--parents`):** Need to touch `deep/nested/folder/file.txt`? Use `-p` or `--parents` and let `R-touch` build the directory tree for you.
-* **Automatic Logging:** Logs successes and errors into your system or app log directory (`/var/log/R-touch` on Linux or `%LocalAppData%\R-touch\logs` on Windows) so you always have an audit trail. Can be disabled with `--no-log`.
+* **Automatic Logging:** Logs successes and errors into your system or user state directory (`~/.local/state/R-touch` on Linux/macOS or `%LocalAppData%\R-touch\logs` on Windows, or `/var/log/R-touch` when running as root) so you always have an audit trail. Can be disabled with `--no-log`.
 * **Platform-Friendly:** Built-in Windows path separator normalization (because backslashes shouldn't be your problem).
 
 ---
@@ -179,7 +179,7 @@ completions = true
 # Default logging behavior (override per-invocation with --log or --no-log)
 should-log = true
 
-# Custom log directory (optional; defaults to /var/log/R-touch on Unix, %LOCALAPPDATA%\R-touch\logs on Windows)
+# Custom log directory (optional; defaults to ~/.local/state/R-touch on Unix, %LOCALAPPDATA%\R-touch\logs on Windows, or /var/log/R-touch if root)
 # Can also be set via R_TOUCH_LOG_DIR (or RTOUCH_LOG_DIR) environment variable or --log-dir CLI flag
 # log-dir = "/path/to/custom/logs"
 

@@ -7,8 +7,8 @@ completions = true
 # whether operations are logged to audit files by default
 should-log = true
 
-# custom directory for audit log files (uncomment to override default /var/log/R-touch)
-# log-dir = "/var/log/R-touch"
+# custom directory for audit log files (uncomment to override default ~/.local/state/R-touch)
+# log-dir = "/path/to/custom/logs"
 
 [time-modify]
 # update access time when modification time is updated with -m

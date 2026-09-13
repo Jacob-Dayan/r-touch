@@ -226,21 +226,34 @@ fn test_log_config_from_env_defaults_for() {
     let cfg = LogConfig::from_env_defaults_for("test-app");
     #[cfg(target_family = "unix")]
     {
-        assert_eq!(
-            cfg.success_log,
-            PathBuf::from("/var/log/test-app/r-touch.log")
-        );
+        let expected_base = if unsafe { libc::getuid() == 0 } {
+            PathBuf::from("/var/log/test-app")
+        } else if let Some(val) = std::env::var_os("XDG_STATE_HOME").filter(|s| !s.is_empty()) {
+            PathBuf::from(val).join("test-app")
+        } else if let Some(home) =
+            dirs_next::home_dir().or_else(|| std::env::var_os("HOME").map(PathBuf::from))
+        {
+            home.join(".local").join("state").join("test-app")
+        } else {
+            PathBuf::from("/tmp/test-app/logs")
+        };
+
+        assert_eq!(cfg.success_log, expected_base.join("r-touch.log"));
         assert_eq!(
             cfg.error_log,
-            PathBuf::from("/var/log/test-app/crashes/file_creations.log")
+            expected_base.join("crashes").join("file_creations.log")
         );
         assert_eq!(
             cfg.atime_log,
-            PathBuf::from("/var/log/test-app/time_modifications/atime_modification.log")
+            expected_base
+                .join("time_modifications")
+                .join("atime_modification.log")
         );
         assert_eq!(
             cfg.mtime_log,
-            PathBuf::from("/var/log/test-app/time_modifications/mtime_modification.log")
+            expected_base
+                .join("time_modifications")
+                .join("mtime_modification.log")
         );
     }
     #[cfg(target_family = "windows")]
@@ -258,6 +271,28 @@ fn test_log_config_from_env_defaults_for() {
             cfg.mtime_log
                 .ends_with(r"test-app\logs\time_modifications\mtime_modification.log")
         );
+    }
+}
+
+#[test]
+fn test_log_config_xdg_state_home_override() {
+    #[cfg(target_family = "unix")]
+    {
+        use std::path::PathBuf;
+
+        unsafe {
+            std::env::set_var("XDG_STATE_HOME", "/tmp/test_xdg_state");
+        }
+        let cfg = LogConfig::from_env_defaults_for("test-xdg-app");
+        if unsafe { libc::getuid() != 0 } {
+            assert_eq!(
+                cfg.success_log,
+                PathBuf::from("/tmp/test_xdg_state/test-xdg-app/r-touch.log")
+            );
+        }
+        unsafe {
+            std::env::remove_var("XDG_STATE_HOME");
+        }
     }
 }
 
