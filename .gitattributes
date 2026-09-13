@@ -1,2 +1,2 @@
-build/** linguist-vendored
+scripts/** linguist-vendored
 examples/** linguist-vendored

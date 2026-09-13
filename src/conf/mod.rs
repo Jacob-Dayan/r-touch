@@ -14,8 +14,8 @@ pub mod model;
 pub mod parse;
 
 pub use io::{
-    config_path_for, default_config_path, load_default, load_default_for, load_from, save_default,
-    save_default_for, save_to, APP_NAME,
+    APP_NAME, config_path_for, default_config_path, load_default, load_default_for, load_from,
+    save_default, save_default_for, save_to,
 };
 pub use model::{AppConfig, TimeModifyConfig};
 pub use parse::{parse, serialize};

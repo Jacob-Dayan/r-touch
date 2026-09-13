@@ -212,18 +212,18 @@ cargo install rtouch
 #### Unix/Linux
 If you are on _Unix_ or _Unix-like_ (e.g. Linux, macOS) OS:
 ```bash
-chmod +x ./build/build-unix.sh
-./build/build-unix.sh
+chmod +x ./scripts/build/build-unix.sh
+./scripts/build/build-unix.sh
 ```
 
 #### Windows
 If you are on Windows (user-level installation):
 ```powershell
-.\build\build-user.ps1
+.\scripts\build\build-user.ps1
 ```
 And for machine-level Windows installation (makes the executable available to all users on the machine, recommended):
 ```powershell
-.\build\build-system.ps1
+.\scripts\build\build-system.ps1
 ```
 
 ---
@@ -238,14 +238,10 @@ cargo test
 ```
  
 ### End-to-End CLI & Library Examples
-- **Unix / Linux / macOS (Bash)**:
+- **Unix / Linux / macOS / WSL (Bash)**:
   ```bash
-  chmod +x ./test_all_examples.sh
-  ./test_all_examples.sh
-  ```
-- **Windows (PowerShell)**:
-  ```powershell
-  pwsh -ExecutionPolicy Bypass -File .\test_all_examples.ps1
+  chmod +x ./scripts/test_all_examples.sh
+  ./scripts/test_all_examples.sh
   ```
  
 ---

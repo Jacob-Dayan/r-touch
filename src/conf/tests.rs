@@ -231,5 +231,3 @@ fn test_app_name_and_config_path_for() {
     let custom_path = config_path_for("other_app").unwrap();
     assert!(custom_path.ends_with(PathBuf::from("other_app").join("config.toml")));
 }
-
-

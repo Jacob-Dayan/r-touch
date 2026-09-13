@@ -91,7 +91,12 @@ impl LogConfig {
         {
             use std::os::unix::fs::PermissionsExt;
 
-            for path in [&self.success_log, &self.error_log, &self.atime_log, &self.mtime_log] {
+            for path in [
+                &self.success_log,
+                &self.error_log,
+                &self.atime_log,
+                &self.mtime_log,
+            ] {
                 if let Some(parent) = path.parent() {
                     let _ = fs::create_dir_all(parent);
                     if let Ok(meta) = fs::metadata(parent) {
@@ -124,7 +129,7 @@ pub mod log {
 }
 pub mod replace_dir;
 
-pub use conf::{AppConfig, TimeModifyConfig, APP_NAME};
+pub use conf::{APP_NAME, AppConfig, TimeModifyConfig};
 pub use replace_dir::ReplResult;
 
 /// core file creation and timestamp management logic
@@ -213,7 +218,3 @@ pub fn set_modification_time<P: AsRef<Path>>(
     file.set_times(times)?;
     Ok(())
 }
-
-#[cfg(test)]
-mod tests;
-

@@ -20,16 +20,16 @@ The compiled binary will be located at `target/release/rtouch` (or `target/relea
 ### Automated Build Scripts
 - **Unix / Linux / macOS**:
   ```bash
-  chmod +x ./build/build-unix.sh
-  ./build/build-unix.sh
+  chmod +x ./scripts/build/build-unix.sh
+  ./scripts/build/build-unix.sh
   ```
 - **Windows (User-level)**:
   ```powershell
-  .\build\build-user.ps1
+  .\scripts\build\build-user.ps1
   ```
 - **Windows (System-wide)**:
   ```powershell
-  .\build\build-system.ps1
+  .\scripts\build\build-system.ps1
   ```
 
 ### Shell Completions
@@ -126,9 +126,10 @@ rtouch -rf existing_folder
 - **Windows**: `%LOCALAPPDATA%\R-touch\logs\`
 
 > [!NOTE]
-> On Unix systems, `/var/log` requires root privileges to create new top-level directories. To initialize user-level access, run:
+> On Unix systems, `/var/log` requires root privileges to create new top-level directories. To initialize user-level access, run the setup script:
 > ```bash
-> sudo mkdir -p /var/log/R-touch && sudo chown -R $USER:$USER /var/log/R-touch
+> chmod +x ./scripts/greet-logging-permissions.sh
+> ./scripts/greet-logging-permissions.sh
 > ```
 
 ### Custom Log Directories
@@ -172,14 +173,13 @@ atime-on-mtime = false
 
 ## 5. Running the Test Suite
 
-Both Bash and PowerShell test suites are provided to validate all library and CLI examples end-to-end:
-
-### Unix / Linux / macOS (Bash)
+To run the unit and integration test suite across any platform:
 ```bash
-./test_all_examples.sh
+cargo test
 ```
 
-### Windows (PowerShell)
-```powershell
-pwsh -ExecutionPolicy Bypass -File .\test_all_examples.ps1
+An end-to-end test runner is provided for Unix, Linux, macOS, and WSL to validate all library and CLI examples:
+```bash
+chmod +x ./scripts/test_all_examples.sh
+./scripts/test_all_examples.sh
 ```

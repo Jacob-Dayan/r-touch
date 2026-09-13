@@ -7,8 +7,8 @@
 // at your option. You may not use this file except in compliance with
 // one of these licenses.
 
-use crate::{LogConfig, ReplResult, touch};
 use fs_err as fs;
+use rtouch::{LogConfig, ReplResult, touch};
 use std::time::{Duration, SystemTime};
 
 #[test]
@@ -275,11 +275,13 @@ fn test_log_config_from_log_dir() {
     );
     assert_eq!(
         cfg.atime_log,
-        base.join("time_modifications").join("atime_modification.log")
+        base.join("time_modifications")
+            .join("atime_modification.log")
     );
     assert_eq!(
         cfg.mtime_log,
-        base.join("time_modifications").join("mtime_modification.log")
+        base.join("time_modifications")
+            .join("mtime_modification.log")
     );
 }
 

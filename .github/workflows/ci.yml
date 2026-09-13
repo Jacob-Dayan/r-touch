@@ -218,11 +218,11 @@ jobs:
 
       - name: Make test scripts executable
         run: |
-          chmod +x ./test_all_examples.sh
+          chmod +x ./scripts/test_all_examples.sh
           chmod +x ./examples/cli/*.sh
 
       - name: Run all examples and CLI integration test scenarios
-        run: ./test_all_examples.sh
+        run: ./scripts/test_all_examples.sh
 
   test-linter-quality:
     name: Behavior - Code Quality & Clippy
