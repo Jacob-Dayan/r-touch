@@ -128,8 +128,8 @@ rtouch -rf existing_folder
 > [!NOTE]
 > On Unix systems, `/var/log` requires root privileges to create new top-level directories. To initialize user-level access, run the setup script:
 > ```bash
-> chmod +x ./scripts/greet-logging-permissions.sh
-> ./scripts/greet-logging-permissions.sh
+> chmod +x ./scripts/grant-logging-permissions.sh
+> ./scripts/grant-logging-permissions.sh
 > ```
 
 ### Custom Log Directories
