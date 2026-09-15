@@ -44,9 +44,12 @@ impl LogConfig {
     }
 
     /// construct a [`LogConfig`] with all standard log subpaths relative to `log_dir`
-    pub fn from_log_dir<P: AsRef<Path>>(log_dir: P) -> Self {
+    /// for a specific application name
+    pub fn from_log_dir_for<P: AsRef<Path>>(log_dir: P, app_name: impl AsRef<str>) -> Self {
         let dir = log_dir.as_ref();
-        let success_log = dir.join("r-touch.log");
+        let app_str = app_name.as_ref();
+        let log_name = format!("{}.log", app_str.to_lowercase());
+        let success_log = dir.join(log_name);
         let error_log = dir.join("crashes").join("file_creations.log");
 
         let time_dir = dir.join("time_modifications");
@@ -54,6 +57,16 @@ impl LogConfig {
         let mtime_log = time_dir.join("mtime_modification.log");
 
         Self::new(success_log, error_log, atime_log, mtime_log)
+    }
+
+    /// construct a [`LogConfig`] with all standard log subpaths relative to `log_dir`
+    pub fn from_log_dir<P: AsRef<Path>>(log_dir: P) -> Self {
+        Self::from_log_dir_for(log_dir, APP_NAME)
+    }
+
+    /// build default log paths for default application (`APP_NAME`) from environment
+    pub fn from_env_defaults() -> Self {
+        Self::from_env_defaults_for(APP_NAME)
     }
 
     /// build default log paths for a specific application name from environment
@@ -67,7 +80,7 @@ impl LogConfig {
         if let Some(dir) =
             std::env::var_os(&env_var_name).or_else(|| std::env::var_os("RTOUCH_LOG_DIR"))
         {
-            return Self::from_log_dir(dir);
+            return Self::from_log_dir_for(dir, app_str);
         }
 
         #[cfg(target_family = "windows")]
@@ -95,7 +108,7 @@ impl LogConfig {
             }
         };
 
-        Self::from_log_dir(log_dir)
+        Self::from_log_dir_for(log_dir, app_str)
     }
 
     /// ensure log dirs and files have standard permissions

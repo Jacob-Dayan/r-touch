@@ -238,7 +238,7 @@ fn test_log_config_from_env_defaults_for() {
             PathBuf::from("/tmp/test-app/logs")
         };
 
-        assert_eq!(cfg.success_log, expected_base.join("r-touch.log"));
+        assert_eq!(cfg.success_log, expected_base.join("test-app.log"));
         assert_eq!(
             cfg.error_log,
             expected_base.join("crashes").join("file_creations.log")
@@ -258,7 +258,7 @@ fn test_log_config_from_env_defaults_for() {
     }
     #[cfg(target_family = "windows")]
     {
-        assert!(cfg.success_log.ends_with(r"test-app\logs\r-touch.log"));
+        assert!(cfg.success_log.ends_with(r"test-app\logs\test-app.log"));
         assert!(
             cfg.error_log
                 .ends_with(r"test-app\logs\crashes\file_creations.log")
@@ -287,7 +287,7 @@ fn test_log_config_xdg_state_home_override() {
         if unsafe { libc::getuid() != 0 } {
             assert_eq!(
                 cfg.success_log,
-                PathBuf::from("/tmp/test_xdg_state/test-xdg-app/r-touch.log")
+                PathBuf::from("/tmp/test_xdg_state/test-xdg-app/test-xdg-app.log")
             );
         }
         unsafe {
@@ -318,6 +318,9 @@ fn test_log_config_from_log_dir() {
         base.join("time_modifications")
             .join("mtime_modification.log")
     );
+
+    let cfg_custom = LogConfig::from_log_dir_for(&base, "my-tool");
+    assert_eq!(cfg_custom.success_log, base.join("my-tool.log"));
 }
 
 #[test]
@@ -330,7 +333,7 @@ fn test_log_config_env_override() {
     let cfg = LogConfig::from_env_defaults_for("test-custom-app");
     assert_eq!(
         cfg.success_log,
-        PathBuf::from("/tmp/test_custom_env_dir/r-touch.log")
+        PathBuf::from("/tmp/test_custom_env_dir/test-custom-app.log")
     );
     assert_eq!(
         cfg.error_log,
