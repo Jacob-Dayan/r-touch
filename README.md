@@ -66,7 +66,7 @@ Options:
   -d, --date <DATE>                    Parse date string expression and use it instead of current time
       --no-log                         Disable logging to log files
       --log                            Force enable logging to log files (overrides config)
-      --log-dir <DIR>                  Custom directory to store log files
+      --log-dir [<DIR>]                Custom directory to store log files, or print current log directory if no value passed
       --install-completion [SHELL]     Automatically install shell completion script [alias: --completion]
   -h, --help                           Print help
   -V, --version                        Print version

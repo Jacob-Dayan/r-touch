@@ -34,7 +34,7 @@ use std::{
 )]
 pub struct Cli {
     /// file paths to touch or create
-    #[arg(required_unless_present_any = ["install_completion", "generate_completion"])]
+    #[arg(required_unless_present_any = ["install_completion", "generate_completion", "log_dir"])]
     pub paths: Vec<String>,
 
     /// create parent directories if they do not exist
@@ -69,9 +69,14 @@ pub struct Cli {
     #[arg(long = "log")]
     pub force_log: bool,
 
-    /// custom directory to store log files
-    #[arg(long = "log-dir", value_name = "DIR")]
-    pub log_dir: Option<PathBuf>,
+    /// custom directory to store log files, or print current log directory if no value passed
+    #[arg(
+        long = "log-dir",
+        value_name = "DIR",
+        num_args = 0..=1,
+        default_missing_value = None
+    )]
+    pub log_dir: Option<Option<PathBuf>>,
 
     /// automatically install shell completions into the appropriate shell directory
     #[arg(
@@ -145,9 +150,22 @@ pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
     };
 
     let custom_log_cfg;
-    let cfg = if let Some(ref dir) = cli.log_dir {
-        custom_log_cfg = rtouch::LogConfig::from_log_dir(dir);
-        &custom_log_cfg
+    let cfg = if let Some(ref dir_opt) = cli.log_dir {
+        match dir_opt {
+            Some(dir) => {
+                custom_log_cfg = rtouch::LogConfig::from_log_dir(dir);
+                &custom_log_cfg
+            }
+            None => {
+                let current_dir = if let Some(ref dir) = config.log_dir {
+                    dir.as_path()
+                } else {
+                    cfg.success_log.parent().unwrap_or(Path::new(""))
+                };
+                println!("{}", current_dir.display());
+                return Ok(());
+            }
+        }
     } else if let Some(ref dir) = config.log_dir {
         custom_log_cfg = rtouch::LogConfig::from_log_dir(dir);
         &custom_log_cfg
@@ -578,10 +596,14 @@ mod tests {
     fn test_cli_parsing_log_dir_flag() {
         let cli = Cli::try_parse_from(["rtouch", "--log-dir", "/custom/logs", "file.txt"]).unwrap();
         assert_eq!(cli.paths, vec!["file.txt"]);
-        assert_eq!(cli.log_dir, Some(PathBuf::from("/custom/logs")));
+        assert_eq!(cli.log_dir, Some(Some(PathBuf::from("/custom/logs"))));
 
         let cli2 = Cli::try_parse_from(["rtouch", "--log-dir=/another/path", "file.txt"]).unwrap();
-        assert_eq!(cli2.log_dir, Some(PathBuf::from("/another/path")));
+        assert_eq!(cli2.log_dir, Some(Some(PathBuf::from("/another/path"))));
+
+        let cli3 = Cli::try_parse_from(["rtouch", "--log-dir"]).unwrap();
+        assert!(cli3.paths.is_empty());
+        assert_eq!(cli3.log_dir, Some(None));
     }
 
     #[test]
