@@ -192,32 +192,10 @@ pub fn touch<P: AsRef<Path>>(
         _ => (true, true),
     };
 
-    if path_ref.is_dir() {
-        // opening directories for writing fails with `IsADirectory` on Unix;
-        // read-only is sufficient, while Windows needs backup semantics flag
-        #[cfg(target_os = "windows")]
-        let file = OpenOptions::new()
-            .access_mode(0x0180) // FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES
-            .custom_flags(0x0200_0000) // FILE_FLAG_BACKUP_SEMANTICS
-            .open(path_ref)?;
-        #[cfg(not(target_os = "windows"))]
-        let file = OpenOptions::new().read(true).open(path_ref)?;
-
-        let mut times = FileTimes::new();
-        if set_atime {
-            times = times.set_accessed(target_time);
-        }
-        if set_mtime {
-            times = times.set_modified(target_time);
-        }
-        file.set_times(times)?;
-        return Ok(ReplResult::NotRequired);
-    }
-
-    let file = if !path_ref.exists() {
-        File::create(path_ref)?
+    let file = if path_ref.exists() {
+        open_existing_for_times(path_ref)?
     } else {
-        OpenOptions::new().write(true).open(path_ref)?
+        File::create(path_ref)?
     };
 
     let mut times = FileTimes::new();
@@ -232,14 +210,24 @@ pub fn touch<P: AsRef<Path>>(
     Ok(ReplResult::NotRequired)
 }
 
+fn open_existing_for_times(path: &Path) -> io::Result<File> {
+    #[cfg(target_os = "windows")]
+    {
+        OpenOptions::new()
+            .access_mode(0x0100)
+            .custom_flags(0x0200_0000)
+            .open(path)
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        OpenOptions::new().read(true).open(path)
+    }
+}
+
 /// set access time (`atime`) of a target path
 pub fn set_access_time<P: AsRef<Path>>(path: P, access_time: SystemTime) -> io::Result<()> {
-    let path_ref = path.as_ref();
-    let file = OpenOptions::new().write(true).open(path_ref)?;
-
-    let times = FileTimes::new().set_accessed(access_time);
-    file.set_times(times)?;
-    Ok(())
+    let file = open_existing_for_times(path.as_ref())?;
+    file.set_times(FileTimes::new().set_accessed(access_time))
 }
 
 /// set modification time (`mtime`) of a target path
@@ -247,10 +235,7 @@ pub fn set_modification_time<P: AsRef<Path>>(
     path: P,
     modification_time: SystemTime,
 ) -> io::Result<()> {
-    let path_ref = path.as_ref();
-    let file = OpenOptions::new().write(true).open(path_ref)?;
-
-    let times = FileTimes::new().set_modified(modification_time);
-    file.set_times(times)?;
-    Ok(())
+    let file = open_existing_for_times(path.as_ref())?;
+    file.set_times(FileTimes::new().set_modified(modification_time))
 }
+
