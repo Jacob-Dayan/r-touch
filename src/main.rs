@@ -20,7 +20,7 @@ use std::{
     borrow::Cow,
     ffi::OsString,
     io::{self, ErrorKind, Read},
-    path::{Path, PathBuf},
+    path::{self, Path, PathBuf},
     process,
     sync::LazyLock,
 };
@@ -280,24 +280,26 @@ pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
                 ReplResult::Aborted => {
                     eprintln!("Abort");
                     if touch_args.should_log {
+                        let log_path = absolute_path(path);
                         logmgr::success_log(
                             cfg,
                             &format_args!("Aborted a replacement of a directory in a file."),
                         )
                         .unwrap_or_else(|e| {
-                            eprintln!("Failed to log abort status for {}: {e}", path.display());
+                            eprintln!("Failed to log abort status for {}: {e}", log_path.display());
                         });
                     }
                     continue;
                 }
                 ReplResult::Completed => {
                     if touch_args.should_log {
+                        let log_path = absolute_path(path);
                         logmgr::success_log(
                             cfg,
-                            &format_args!("Replaced directory with file: {}", path.display()),
+                            &format_args!("Replaced directory with file: {}", log_path.display()),
                         )
                         .unwrap_or_else(|e| {
-                            eprintln!("Failed to log completion for {}: {e}", path.display());
+                            eprintln!("Failed to log completion for {}: {e}", log_path.display());
                         });
 
                         if parsed_date.is_some() || touch_args.atime || touch_args.mtime {
@@ -306,13 +308,13 @@ pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
                                     cfg,
                                     &format_args!(
                                         "Successfully updated access time for {}",
-                                        path.display()
+                                        log_path.display()
                                     ),
                                 )
                                 .unwrap_or_else(|e| {
                                     eprintln!(
                                         "Failed to log atime success for {}: {e}",
-                                        path.display()
+                                        log_path.display()
                                     );
                                 });
                             }
@@ -321,13 +323,13 @@ pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
                                     cfg,
                                     &format_args!(
                                         "Successfully updated modification time for {}",
-                                        path.display()
+                                        log_path.display()
                                     ),
                                 )
                                 .unwrap_or_else(|e| {
                                     eprintln!(
                                         "Failed to log mtime success for {}: {e}",
-                                        path.display()
+                                        log_path.display()
                                     );
                                 });
                             }
@@ -336,13 +338,14 @@ pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
                 }
                 ReplResult::NotRequired => {
                     if touch_args.should_log {
+                        let log_path = absolute_path(path);
                         let message = if touch_args.create_parents {
-                            format_args!("File & parent folder created: {}", path.display())
+                            format_args!("File & parent folder created: {}", log_path.display())
                         } else {
-                            format_args!("File Created: {}", path.display())
+                            format_args!("File Created: {}", log_path.display())
                         };
                         logmgr::success_log(cfg, &message).unwrap_or_else(|e| {
-                            eprintln!("Failed to log creation for {}: {e}", path.display());
+                            eprintln!("Failed to log creation for {}: {e}", log_path.display());
                         });
 
                         if parsed_date.is_some() || touch_args.atime || touch_args.mtime {
@@ -351,13 +354,13 @@ pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
                                     cfg,
                                     &format_args!(
                                         "Successfully updated access time for {}",
-                                        path.display()
+                                        log_path.display()
                                     ),
                                 )
                                 .unwrap_or_else(|e| {
                                     eprintln!(
                                         "Failed to log atime success for {}: {e}",
-                                        path.display()
+                                        log_path.display()
                                     );
                                 });
                             }
@@ -366,13 +369,13 @@ pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
                                     cfg,
                                     &format_args!(
                                         "Successfully updated modification time for {}",
-                                        path.display()
+                                        log_path.display()
                                     ),
                                 )
                                 .unwrap_or_else(|e| {
                                     eprintln!(
                                         "Failed to log mtime success for {}: {e}",
-                                        path.display()
+                                        log_path.display()
                                     );
                                 });
                             }
@@ -400,17 +403,18 @@ pub fn run(cfg: &rtouch::LogConfig) -> io::Result<()> {
                 }
 
                 if touch_args.should_log {
+                    let log_path = absolute_path(path);
                     let log_res = if error.kind() == ErrorKind::IsADirectory {
                         logmgr::error_log(
                             cfg,
-                            &format_args!("Attempted to touch directory: {}", path.display()),
+                            &format_args!("Attempted to touch directory: {}", log_path.display()),
                         )
                     } else {
                         logmgr::error_log(cfg, &format_args!("Unexpected Error : {error}"))
                     };
 
                     log_res.unwrap_or_else(|e| {
-                        eprintln!("Failed to log error for {}: {e}", path.display());
+                        eprintln!("Failed to log error for {}: {e}", log_path.display());
                     });
                 }
             }
@@ -446,6 +450,17 @@ fn prompt_replace_directory(path: &Path) -> bool {
         p = path.display()
     );
     read_confirmation()
+}
+
+/// return absolute path if `path` is relative, otherwise borrow `path` as-is
+fn absolute_path(path: &Path) -> Cow<'_, Path> {
+    if path.is_relative() {
+        path::absolute(path)
+            .map(Cow::Owned)
+            .unwrap_or_else(|_| Cow::Borrowed(path))
+    } else {
+        Cow::Borrowed(path)
+    }
 }
 
 #[cfg(test)]
@@ -630,5 +645,48 @@ mod tests {
         assert!(parse_confirmation(&b""[..]));
         assert!(parse_confirmation(&b"ok"[..]));
         assert!(parse_confirmation(&b"sure"[..]));
+    }
+
+    #[test]
+    fn test_absolute_path_relative() {
+        let rel_path = Path::new("relative/file.txt");
+        let abs = absolute_path(rel_path);
+        assert!(abs.is_absolute());
+        assert!(abs.ends_with(Path::new("relative/file.txt")));
+        assert!(matches!(abs, Cow::Owned(_)));
+    }
+
+    #[test]
+    fn test_absolute_path_already_absolute() {
+        #[cfg(unix)]
+        let abs_path = Path::new("/var/log/app.log");
+        #[cfg(windows)]
+        let abs_path = Path::new(r"C:\var\log\app.log");
+        let res = absolute_path(abs_path);
+        assert_eq!(res, abs_path);
+        assert!(matches!(res, Cow::Borrowed(_)));
+    }
+
+    #[test]
+    fn test_logging_absolute_relative_path() {
+        let temp_dir = std::env::temp_dir().join("rtouch_log_abs_test");
+        let _ = fs_err::remove_dir_all(&temp_dir);
+        let cfg = rtouch::LogConfig::from_log_dir(&temp_dir);
+
+        let rel_path = Path::new("my_relative_file.txt");
+        let log_path = absolute_path(rel_path);
+        assert!(log_path.is_absolute());
+
+        logmgr::success_log(
+            &cfg,
+            &format_args!("File Created: {}", log_path.display()),
+        )
+        .unwrap();
+
+        let content = fs_err::read_to_string(&cfg.success_log).unwrap();
+        assert!(content.contains(&log_path.display().to_string()));
+        assert!(!content.contains("File Created: my_relative_file.txt\n"));
+
+        let _ = fs_err::remove_dir_all(&temp_dir);
     }
 }
