@@ -238,4 +238,3 @@ pub fn set_modification_time<P: AsRef<Path>>(
     let file = open_existing_for_times(path.as_ref())?;
     file.set_times(FileTimes::new().set_modified(modification_time))
 }
-

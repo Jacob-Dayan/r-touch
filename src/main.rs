@@ -446,7 +446,7 @@ fn read_confirmation() -> bool {
 
 fn prompt_replace_directory(path: &Path) -> bool {
     eprintln!(
-        "'{p}' is a directory. Do you want to delete directory and replace it with the file? (y/n)",
+        "'{p}' is a directory. Do you want to delete it and all its contents to replace it with the file? (y/n)",
         p = path.display()
     );
     read_confirmation()
@@ -677,11 +677,7 @@ mod tests {
         let log_path = absolute_path(rel_path);
         assert!(log_path.is_absolute());
 
-        logmgr::success_log(
-            &cfg,
-            &format_args!("File Created: {}", log_path.display()),
-        )
-        .unwrap();
+        logmgr::success_log(&cfg, &format_args!("File Created: {}", log_path.display())).unwrap();
 
         let content = fs_err::read_to_string(&cfg.success_log).unwrap();
         assert!(content.contains(&log_path.display().to_string()));
