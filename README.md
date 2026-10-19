@@ -4,8 +4,10 @@
 [![Crates.io](https://img.shields.io/crates/v/rtouch.svg)](https://crates.io/crates/rtouch)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
 [![Rust](https://img.shields.io/badge/Rust-2024%20Edition-orange.svg)](https://www.rust-lang.org)
+[![Status: Feature-Complete](https://img.shields.io/badge/status-feature--complete-brightgreen.svg)]()
+[![Maintenance: Passive](https://img.shields.io/badge/maintenance-passive-blue.svg)]()
 
-The non-drop-in replacement that has its own date time parser as a library in [crates.io](https://crates.io/crates/rtouch), independently logs successes, failures, and time-modifications that we all've been waiting for, because it's well known that [`touch`](https://www.gnu.org/software/coreutils/touch) is the only tool separating us from world peace, and ruining our workflows! oh c'mon now, we all know you wanted a Rust-written improvement for the [`GNU touch`](https://www.gnu.org/software/coreutils/touch)...
+The touch alternative that has its own date time parser as a library in [crates.io](https://crates.io/crates/rtouch), independently logs successes, failures, and time-modifications that we all've been waiting for, because everyone knows that [`touch`](https://www.gnu.org/software/coreutils/touch) is the only tool separating us from world peace, and ruining our workflows!
 
 ## Why did I even create R-touch?
 I thought about it:
@@ -264,3 +266,6 @@ This project is double licensed under [GPL-3.0-or-later](https://www.gnu.org/lic
 ### Note on Release Timestamps & Tags
 
 > **Notice:** Due to a tag migration script refactoring (`R-touch-*` to `v*`), GitHub Release publication dates were reset. The underlying code history, original commit dates, and Git tags remain fully preserved in the repository tree.
+
+## Maintenance Status
+R-touch is considered feature-complete. Active development is focused strictly on bug fixes, performance, and dependency updates.
